@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>דשבורד ניתוח שאלון – קהילה</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--navy:#1a3a5c;--gold:#c8a84b;--green:#27ae60;--orange:#e67e22;--red:#e74c3c;--purple:#8e44ad;--bg:#f0f4f9;--card:#fff;--text:#2c3e50;--border:#dde3ea;--shadow:0 2px 14px rgba(0,0,0,.07)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);direction:rtl}
+header{background:linear-gradient(135deg,#1a3a5c,#0f2540);color:#fff;padding:18px 36px;display:flex;align-items:center;gap:16px;box-shadow:0 3px 12px rgba(0,0,0,.25)}
+.logo{width:52px;height:52px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+header h1{font-size:1.55rem;font-weight:700;letter-spacing:-.3px}
+header p{font-size:.88rem;opacity:.75;margin-top:3px}
+main{max-width:1320px;margin:0 auto;padding:28px 20px 60px}
+.card{background:var(--card);border-radius:14px;padding:24px;margin-bottom:24px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.card-title{font-size:1.55rem;font-weight:700;color:var(--navy);margin-bottom:16px;padding-bottom:12px;border-bottom:2.5px solid var(--gold);display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between}
+.drop-zone{border:2.5px dashed var(--border);border-radius:12px;padding:52px 24px;text-align:center;cursor:pointer;transition:all .2s;background:#fafbfd}
+.drop-zone:hover,.drop-zone.over{border-color:var(--navy);background:#edf2f9}
+.drop-zone .icon{font-size:3rem;margin-bottom:12px}
+.drop-zone h3{color:var(--navy);font-size:1.1rem;margin-bottom:6px}
+.drop-zone p{color:#888;font-size:.88rem}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 22px;border-radius:9px;border:none;cursor:pointer;font-size:.93rem;font-weight:600;transition:filter .15s,transform .1s}
+.btn:hover{filter:brightness(1.1)}.btn:active{transform:scale(.97)}
+.btn-sm{padding:6px 14px;font-size:.8rem;border-radius:7px}
+.btn-navy{background:var(--navy);color:#fff}
+.btn-gold{background:var(--gold);color:#fff}
+.btn-red{background:#e74c3c;color:#fff}
+.btn-ghost{background:#eef1f6;color:var(--navy)}
+.file-info{margin-top:12px;padding:12px 16px;background:#edf3fc;border-radius:9px;font-size:.88rem;display:flex;gap:20px;flex-wrap:wrap;border:1px solid #d0dff0}
+.file-info span{color:#555}.file-info strong{color:var(--navy)}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px}
+.stat-box{border-radius:12px;padding:18px 16px;text-align:center;color:#fff}
+.stat-box .val{font-size:2.8rem;font-weight:800;line-height:1}
+.stat-box .lbl{font-size:1.05rem;margin-top:5px;opacity:.9}
+.sb-navy{background:linear-gradient(135deg,#1a3a5c,#254d7a)}
+.sb-gold{background:linear-gradient(135deg,#c8a84b,#b8943b)}
+.sb-green{background:linear-gradient(135deg,#27ae60,#219a52)}
+.sb-orange{background:linear-gradient(135deg,#e67e22,#d35400)}
+.sb-purple{background:linear-gradient(135deg,#8e44ad,#7d3c98)}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{background:#f0f4f9;color:var(--navy);padding:9px 12px;text-align:right;font-weight:700;font-size:.78rem;border-bottom:2px solid var(--border);position:sticky;top:0}
+td{padding:8px 12px;border-bottom:1px solid #f0f2f5;vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbff}
+.setup-wrap{max-height:480px;overflow-y:auto;border:1px solid var(--border);border-radius:10px}
+.setup-wrap table{font-size:.82rem}
+select.type-sel{width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:.8rem;direction:rtl;background:#fff}
+.sample-txt{color:#888;font-size:.78rem;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-weight:700;font-size:.72rem;white-space:nowrap}
+.badge-cat{background:#dbe7fa;color:#1a3a5c}
+.badge-check{background:#d4edda;color:#155724}
+.badge-likert{background:#fde9c8;color:#8a5a12}
+.badge-text{background:#f1e3f7;color:#5b2c8d}
+.badge-hide{background:#eee;color:#888}
+.badge-num{background:#fce0de;color:#a23327}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;font-size:.83rem;font-weight:600;cursor:pointer;background:#eef1f6;color:var(--navy);border:1.5px solid transparent;transition:all .15s}
+.chip:hover{background:#dde7f5}
+.chip.active{background:var(--navy);color:#fff}
+.chip .cnt{opacity:.7;font-weight:400}
+.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.toolbar label{font-size:.85rem;font-weight:600;color:var(--navy)}
+.toolbar select{padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.88rem;direction:rtl;background:#fff}
+.section-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.sec-btn{padding:9px 18px;border-radius:20px;border:1.5px solid var(--border);background:#fff;color:#555;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .15s}
+.sec-btn:hover{border-color:var(--navy)}
+.sec-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.q-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:18px}
+.priority-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+@media(max-width:600px){.priority-grid{grid-template-columns:1fr}}
+.q-card{background:var(--card);border-radius:12px;padding:24px 28px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.q-card h3{color:var(--navy);font-size:1.35rem;margin-bottom:8px;line-height:1.4}
+.q-meta{font-size:1rem;color:#888;margin-bottom:16px}
+.chart-wrap{position:relative;height:320px;margin-bottom:14px}
+.chart-wrap-tall{position:relative;height:auto;min-height:180px}
+.mini-table{margin-top:8px}
+.mini-table td{font-size:1.15rem;padding:8px 10px}
+.bar-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f4f5f7}
+.bar-row:last-child{border-bottom:none}
+.bar-label{flex:0 0 230px;font-size:1.1rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;height:16px;background:#eef1f6;border-radius:8px;overflow:hidden}
+.bar-fill{display:block;height:100%;border-radius:8px;background:linear-gradient(90deg,#1a3a5c,#2f6097)}
+.bar-pct{flex:0 0 62px;font-size:1.1rem;font-weight:700;color:var(--navy);text-align:left}
+.checkbox-groups-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:8px 28px}
+.checkbox-group-col+.checkbox-group-col{border-inline-start:1px solid var(--border);padding-inline-start:20px}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:900;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:16px;padding:26px;width:min(640px,94vw);max-height:82vh;box-shadow:0 8px 40px rgba(0,0,0,.25);display:flex;flex-direction:column}
+.modal-list{overflow-y:auto;flex:1 1 auto;min-height:0}
+.modal h3{color:var(--navy);margin-bottom:10px;font-size:1.1rem;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.modal-close-x{background:none;border:none;font-size:1.3rem;line-height:1;cursor:pointer;color:#888;padding:0 4px}
+.modal-close-x:hover{color:#333}
+.modal input[type=text]{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.88rem;margin-bottom:14px;direction:rtl}
+.resp-item{padding:10px 12px;background:#f8f9fb;border-radius:8px;margin-bottom:8px;font-size:.86rem;border:1px solid var(--border);line-height:1.5}
+.resp-item small{color:#999;display:block;margin-top:4px;font-size:.74rem}
+.hidden{display:none!important}
+.loader-overlay{position:fixed;inset:0;background:rgba(255,255,255,.85);z-index:800;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;backdrop-filter:blur(2px)}
+.spinner{width:48px;height:48px;border:4px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-text{font-size:1rem;font-weight:600;color:var(--navy)}
+.empty-note{color:#888;font-size:.85rem;text-align:center;padding:30px}
+#mascotWrap{position:fixed;bottom:18px;left:18px;z-index:700;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+#mascotImg{width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;background:#fff;transition:transform .2s;transform-origin:bottom left}
+#mascotImg:hover{transform:scale(2)}
+#mascotBubble{background:#fff;color:var(--navy);font-weight:700;font-size:1.8rem;padding:50px 80px;border-radius:40px;box-shadow:0 4px 14px rgba(0,0,0,.2);border:1px solid var(--border);position:relative;max-width:1100px;animation:mascotPop .18s ease-out;transition:transform .2s;transform-origin:bottom left}
+#mascotBubble:hover{transform:scale(2)}
+#mascotBubble::after{content:'';position:absolute;bottom:-30px;left:100px;width:60px;height:60px;background:#fff;border-inline-end:1px solid var(--border);border-block-end:1px solid var(--border);transform:rotate(45deg)}
+@keyframes mascotPop{from{opacity:0;transform:translateY(6px) scale(.9)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:600px){header{padding:14px 16px}.q-grid{grid-template-columns:1fr}.stats-row{grid-template-columns:repeat(2,1fr)}.bar-label{flex:0 0 130px;font-size:.74rem}}
+#pwGate{position:fixed;inset:0;background:var(--navy);z-index:2000;display:flex;align-items:center;justify-content:center}
+#pwGate.hidden{display:none!important}
+#pwCard{background:#fff;border-radius:16px;padding:36px 32px;width:min(320px,90vw);text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+#pwCard h2{color:var(--navy);font-size:1.1rem;margin-bottom:18px}
+#pwCard input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:1rem;text-align:center;letter-spacing:2px}
+#pwError{color:#c0392b;font-size:.82rem;margin-top:10px}
+</style>
+</head>
+<body>
+
+<!-- PASSWORD GATE -->
+<div id="pwGate">
+  <div id="pwCard">
+    <div class="logo" style="margin:0 auto 14px">ק</div>
+    <h2>הזן ססמה לצפייה בדשבורד</h2>
+    <input type="password" id="pwInput" autocomplete="off" placeholder="ססמה">
+    <button class="btn btn-navy" type="button" onclick="checkPassword()" style="width:100%;margin-top:12px">כניסה</button>
+    <div id="pwError" class="hidden">ססמה שגויה, נסה שוב</div>
+  </div>
+</div>
+
+<header>
+  <div class="logo">ק</div>
+  <div>
+    <h1>דשבורד ניתוח שאלון קהילה</h1>
+    <p>העלאת CSV וצפייה בכל הפילוחים של הסקר במבט אחד</p>
+  </div>
+</header>
+
+<main>
+
+<div class="card">
+  <div class="card-title">📂 שלב 1 – העלאת קובץ נתונים</div>
+  <div class="drop-zone" id="dropZone">
+    <div class="icon">📊</div>
+    <h3>גרור קובץ CSV לכאן</h3>
+    <p>ייצוא מ-Google Forms / JotForm / Typeform וכל פלטפורמת סקרים אחרת</p>
+    <br>
+    <button class="btn btn-navy" type="button" onclick="event.stopPropagation();document.getElementById('fileInput').click()">בחר קובץ CSV</button>
+    <input type="file" id="fileInput" accept=".csv,.tsv,.txt" style="display:none">
+  </div>
+  <div id="fileInfo" class="file-info hidden">
+    <span>📄 <strong id="fileName"></strong></span>
+    <span>תגובות: <strong id="rowCount"></strong></span>
+    <span>עמודות: <strong id="colCount"></strong></span>
+  </div>
+</div>
+
+<div class="card hidden" id="setupCard">
+  <div class="card-title" style="cursor:pointer" onclick="toggleSetupBody()">
+    <span>⚙️ הגדרות עמודות (לא חובה) <span id="setupToggleArrow">▾</span></span>
+    <span style="font-size:.78rem;font-weight:400;color:#888">הדשבורד נבנה אוטומטית — כאן אפשר לשנות ידנית את סוג שאלה ולעדכן</span>
+  </div>
+  <div id="setupBody" class="hidden">
+    <div class="toolbar">
+      <label>הצג:</label>
+      <select id="setupFilter" onchange="renderSetupTable()">
+        <option value="all">כל העמודות</option>
+        <option value="visible">רק עמודות שיוצגו בדשבורד</option>
+        <option value="hidden">רק עמודות מוסתרות / טכניות</option>
+      </select>
+    </div>
+    <div class="setup-wrap">
+      <table id="setupTable"><thead><tr><th>#</th><th>שם העמודה</th><th>% מענה</th><th>ערכים ייחודיים</th><th>דוגמת ערכים</th><th>סוג</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div style="margin-top:20px"><button class="btn btn-gold" onclick="buildDashboard()">🔄 עדכן דשבורד</button></div>
+  </div>
+</div>
+
+<div id="resultsSection" class="hidden">
+
+  <div class="stats-row" id="statsRow"></div>
+
+  <div class="card">
+    <div class="card-title">🔄 השוואה לסקר קודם
+      <span style="font-size:.78rem;font-weight:400;color:#888">משווה את 4 השאלות המרכזיות (שמוצגות ראשונות) לנתוני סקר 2025</span>
+    </div>
+    <button class="btn btn-navy btn-sm" id="comparisonToggleBtn" onclick="toggleComparison()">🔄 הצג השוואה לנתוני 2025</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔎 פילוח לפי</div>
+    <div class="toolbar">
+      <label>בחר מימד לפילוח:</label>
+      <select id="segmentSelect" onchange="onSegmentChange()"><option value="">— ללא פילוח —</option></select>
+      <button class="btn btn-ghost btn-sm hidden" id="clearFilterBtn" onclick="clearSegmentFilter()">✖ נקה סינון</button>
+    </div>
+    <div id="segmentChips" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+  </div>
+
+  <div class="section-tabs" id="sectionTabs"></div>
+
+  <div id="dashboardContent"></div>
+
+</div>
+
+<div id="emptyHint" class="empty-note hidden">לא נמצאו עמודות מתאימות לניתוח. נסה לשנות את הגדרות הסוג בשלב 2.</div>
+
+</main>
+
+<!-- MASCOT -->
+<div id="mascotWrap">
+  <div id="mascotBubble" class="hidden"></div>
+  <img id="mascotImg" src="gil-avatar.jpg" alt="גיל" onclick="showMascotBubble()">
+</div>
+
+<!-- LOADER -->
+<div class="loader-overlay hidden" id="loader">
+  <div class="spinner"></div>
+  <div class="loader-text" id="loaderText">טוען...</div>
+</div>
+
+<!-- FREE TEXT MODAL -->
+<div class="modal-bg" id="textModalBg" onclick="if(event.target===this)closeTextModal()">
+  <div class="modal">
+    <h3><span id="textModalTitle">תשובות חופשיות</span><button class="modal-close-x" onclick="closeTextModal()" aria-label="סגור">✕</button></h3>
+    <input type="text" id="textModalSearch" placeholder="🔍 חיפוש בתשובות..." oninput="filterTextModal()">
+    <div id="textModalList" class="modal-list"></div>
+    <div style="margin-top:14px;flex:0 0 auto"><button class="btn btn-ghost" onclick="closeTextModal()">סגור</button></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   PASSWORD GATE — client-side only, a basic deterrent (not real
+   security) since anyone with the file can view its source.
+   ============================================================ */
+const PAGE_PASSWORD='9211';
+(function initPasswordGate(){
+  const gate=document.getElementById('pwGate');
+  if(sessionStorage.getItem('pwUnlocked')==='1'){gate.classList.add('hidden');return;}
+  const input=document.getElementById('pwInput');
+  input.addEventListener('keydown',e=>{if(e.key==='Enter')checkPassword();});
+  setTimeout(()=>input.focus(),50);
+})();
+function checkPassword(){
+  const input=document.getElementById('pwInput');
+  if(input.value===PAGE_PASSWORD){
+    sessionStorage.setItem('pwUnlocked','1');
+    document.getElementById('pwGate').classList.add('hidden');
+  }else{
+    document.getElementById('pwError').classList.remove('hidden');
+    input.value='';
+    input.focus();
+  }
+}
+
+/* ============================================================
+   UTILITIES — CSV parsing (BOM/encoding-safe)
+   ============================================================ */
+function showLoader(msg){document.getElementById('loaderText').textContent=msg||'טוען...';document.getElementById('loader').classList.remove('hidden');}
+function hideLoader(){document.getElementById('loader').classList.add('hidden');}
+
+const MASCOT_LINES=['יפה מאוד גיל!','אין כמוך גיל!','קבל ממתק לשבת!','תתקשר אליי גיל','אלוף שאין דברים כאלה!'];
+let mascotTimer=null;
+function showMascotBubble(){
+  const bubble=document.getElementById('mascotBubble');
+  bubble.textContent=MASCOT_LINES[Math.floor(Math.random()*MASCOT_LINES.length)];
+  bubble.classList.remove('hidden');
+  clearTimeout(mascotTimer);
+  mascotTimer=setTimeout(()=>bubble.classList.add('hidden'),3000);
+}
+function fmtNum(n){return (n||0).toLocaleString('he-IL');}
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+/* Full-text CSV tokenizer — handles quoted fields that contain embedded
+   newlines or delimiters (common in free-text survey answers), which a
+   naive split('\n') + per-line parse would corrupt. */
+function parseCSVRows(txt,d){
+  const rows=[];let row=[],cur='',inQ=false;
+  for(let i=0;i<txt.length;i++){
+    const c=txt[i];
+    if(inQ){
+      if(c==='"'){
+        if(txt[i+1]==='"'){cur+='"';i++;}
+        else inQ=false;
+      }else cur+=c;
+    }else{
+      if(c==='"')inQ=true;
+      else if(c===d){row.push(cur);cur='';}
+      else if(c==='\r'){/* skip, \n handles row break */}
+      else if(c==='\n'){row.push(cur);rows.push(row);row=[];cur='';}
+      else cur+=c;
+    }
+  }
+  if(cur!==''||row.length){row.push(cur);rows.push(row);}
+  return rows;
+}
+
+function readFileAuto(file,callback){
+  const reader=new FileReader();
+  reader.onerror=()=>{hideLoader();alert('שגיאה בקריאת הקובץ');};
+  reader.onload=e=>{
+    try{
+      const arr=new Uint8Array(e.target.result);
+      let enc='utf-8';
+      if(arr.length>=2&&arr[0]===0xFF&&arr[1]===0xFE)enc='utf-16le';
+      else if(arr.length>=2&&arr[0]===0xFE&&arr[1]===0xFF)enc='utf-16be';
+      callback(new TextDecoder(enc).decode(arr));
+    }catch(err){hideLoader();alert('שגיאה בפענוח הקובץ: '+err.message);}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function genericParseCSV(txt){
+  txt=txt.replace(/^﻿/,'');
+  const firstLine=txt.split('\n')[0];
+  const d=firstLine.includes('\t')?'\t':firstLine.includes(';')?';':',';
+  const rows=parseCSVRows(txt.replace(/\n+$/,''),d).filter(r=>!(r.length===1&&r[0]===''));
+  if(rows.length<2)return null;
+  const headers=rows[0].map(h=>h.trim());
+  const data=[];
+  for(let i=1;i<rows.length;i++){
+    const row=rows[i];
+    if(row.some(c=>c.trim())){const obj={};headers.forEach((h,j)=>{obj[h]=(row[j]||'').trim();});data.push(obj);}
+  }
+  return{headers,data};
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let csvHeaders=[],csvData=[],colMeta={},colType={};
+let segmentBy='',segmentFilterValue=null,activeSection='all',comparisonMode=false;
+let charts={},textModalValues=[],textModalAllValues=[];
+
+const TYPE_LABELS={categorical:'קטגוריאלי (בחירה יחידה)',checkbox:'תיבת סימון (כן/לא)',likert:'סולם / מספרי',numeric:'מספרי (טווח רציף)',freetext:'טקסט חופשי',metadata:'מידע טכני (מוסתר)'};
+const TYPE_BADGE={categorical:'badge-cat',checkbox:'badge-check',likert:'badge-likert',numeric:'badge-num',freetext:'badge-text',metadata:'badge-hide'};
+
+/* ============================================================
+   COLUMN TYPE DETECTION
+   ============================================================ */
+const METADATA_NAME_RX=/(^id$|מזהה|מספר רשומה|תאריך רשומה|date updated|date created|מועד עסק|סטטוס תשוב|סטטוס תשלום|סכום תשלום|תאריך תשלום|קטגוריית סט|שם משתמש|סוכן משתמש|כתובת ip|submission speed|user.?agent|browser|ip address|^utm_|^x$|^gil$|^office$|^test$|^whatsapp$)/i;
+const JOTFORM_ARTIFACT_RX=/^glikertcol[0-9a-z]+$/i;
+// Columns always hidden by exact name, regardless of the regex heuristics above.
+const ALWAYS_HIDE_NAMES=new Set(['utm_content','utm_campaign','date updated','מזהה עסקה','סכום תשלום','תאריך תשלום','סטטוס תשלום','סוכן משתמש','כתובת ip של משתמש','submission speed (ms)','קבוצות דת']);
+
+/* Demographic core questions — always categorical, and hidden from the
+   editable column-setup table since their type never needs adjusting.
+   "מהי הזהות הדתית שלך?" also gets its raw answers regrouped into the
+   4 fixed buckets used for reporting (see remapReligiousIdentity). */
+function remapReligiousIdentity(raw){
+  const v=(raw||'').trim();
+  if(!v)return '';
+  if(v==='חרדי')return 'חרדי';
+  if(/חרדי\s*לאומי/.test(v))return 'דתי';
+  if(/דתי\s*לאומי/.test(v))return 'דתי';
+  if(/מסורתי/.test(v))return 'מסורתי';
+  if(/חילוני עם זיקה/.test(v))return 'מסורתי';
+  if(/חילוני/.test(v))return 'חילוני';
+  return 'אחר';
+}
+function remapResidenceArea(raw){
+  const v=(raw||'').trim();
+  if(!v)return '';
+  if(v==='הבקעה')return 'יהודה ושומרון';
+  return v;
+}
+const FIXED_COLUMNS={
+  'מהו המגדר הרשום בתעודת הזהות שלך?':{type:'categorical'},
+  'מהו גילך?':{type:'categorical',order:['עד 20','21-30','31-40','41-50','51-60','61-70','71 ומעלה']},
+  'מהו אזור המגורים שלך?':{type:'categorical',remap:remapResidenceArea},
+  'מהי הזהות הדתית שלך?':{type:'categorical',remap:remapReligiousIdentity}
+};
+function applyFixedColumnRules(){
+  csvHeaders.forEach(h=>{
+    const cfg=FIXED_COLUMNS[h.trim()];
+    if(cfg&&cfg.remap)csvData.forEach(row=>{row[h]=cfg.remap(row[h]);});
+  });
+}
+
+/* These 4 core demographic questions are always shown first, together in a
+   single 4-way row, and can optionally be compared against last year's
+   (2025) survey results. Keys/labels here must match the *current* survey's
+   exact column and value strings — the percentages are the 2025 reference
+   figures. */
+const PRIORITY_COLUMNS=[
+  'מהו המגדר הרשום בתעודת הזהות שלך?',
+  'מהו גילך?',
+  'מהי הזהות הדתית שלך?',
+  'מהו אזור המגורים שלך?'
+];
+const COMPARISON_DATA={
+  'מהו המגדר הרשום בתעודת הזהות שלך?':{year:'2025',values:{'גבר':51,'אישה':49}},
+  'מהו גילך?':{year:'2025',values:{'עד 20':5,'21-30':15,'31-40':22,'41-50':15,'51-60':15,'61-70':13,'71 ומעלה':15}},
+  // 2025 raw breakdown was: אתאיסט 8%, חילוני 29%, חילוני עם זיקה למסורת 12%, מסורתי לא דתי 8%,
+  // מסורתי דתי 6%, דתי לאומי 26%, חרדי לאומי 6%, חרדי 3%, אחר 2% — regrouped here with the same
+  // logic as remapReligiousIdentity(): מסורתי=12+8+6=26, דתי=26+6=32, חרדי=3, חילוני=29, אחר=8+2=10.
+  'מהי הזהות הדתית שלך?':{year:'2025',values:{'מסורתי':26,'דתי':32,'חרדי':3,'חילוני':29,'אחר':10}},
+  // 2025 wording was "כן, יותר מפעם אחת" / "כן, פעם אחת" — mapped here to this year's equivalent option labels.
+  'האם נתקלת בחודש האחרון בתכנים של ערוץ "משב" באתר או ברשתות החברתיות?':{year:'2025',values:{'כן, כמה פעמים':66,'כן, לפחות פעם אחת':8,'לא':26}}
+};
+
+function normTxt(s){return (s||'').toString().trim().toLowerCase().replace(/["'.,!?;:()\u200F\u200E]/g,'').replace(/\s+/g,' ');}
+
+/* Some export tools (e.g. JotForm) leave internal placeholder tokens like
+   "glikertcol1059ea92da" in scale/Likert cells instead of the chosen value
+   when a matrix question renders oddly — treat those as blank. Conditional
+   (gated) questions can also come back with an explicit "no data" placeholder
+   for respondents who were never shown the question — that isn't a real
+   answer choice, so it's treated as blank too, otherwise it inflates the
+   response total and shows up as a bogus extra category in the charts. */
+const NO_ANSWER_RX=/^(אין נתונים|לא נענה|not answered|n\/?a)$/i;
+function sanitizeArtifacts(){
+  csvData.forEach(row=>{
+    csvHeaders.forEach(h=>{
+      const v=(row[h]||'').trim();
+      if(JOTFORM_ARTIFACT_RX.test(v)||NO_ANSWER_RX.test(v))row[h]='';
+    });
+  });
+}
+
+function buildColMeta(){
+  colMeta={};colType={};
+  csvHeaders.forEach(h=>{
+    const raw=csvData.map(r=>(r[h]||'').trim());
+    const nonEmpty=raw.filter(v=>v!=='');
+    const filled=nonEmpty.length,total=raw.length;
+    const uniqSet=new Set(nonEmpty);
+    const uniqArr=[...uniqSet];
+    const sample=uniqArr.slice(0,3).join(' · ');
+    let auto='freetext';
+    if(filled===0){auto='metadata';}
+    else if(/^\{.*\}$/.test(nonEmpty[0])||/^\[.*\]$/.test(nonEmpty[0])){auto='metadata';}
+    else{
+      const isNumeric=nonEmpty.every(v=>/^-?\d+(\.\d+)?$/.test(v));
+      if(isNumeric){
+        const nums=nonEmpty.map(Number);
+        const distinct=new Set(nums).size;
+        auto=(distinct<=12)?'likert':'numeric';
+      }else{
+        const colNorm=normTxt(h);
+        const checkboxLike=nonEmpty.filter(v=>{
+          const vn=normTxt(v);
+          return vn===colNorm||colNorm.includes(vn.slice(0,18))||vn.includes(colNorm.slice(0,18));
+        }).length;
+        if(uniqArr.length<=3&&checkboxLike/filled>0.7){
+          auto='checkbox';
+        }else if(uniqArr.length<=15&&uniqArr.every(v=>v.length<=45)){
+          auto='categorical';
+        }else{
+          auto='freetext';
+        }
+      }
+    }
+    if(METADATA_NAME_RX.test(h)||ALWAYS_HIDE_NAMES.has(h.trim().toLowerCase()))auto='metadata';
+    if(FIXED_COLUMNS[h.trim()])auto=FIXED_COLUMNS[h.trim()].type;
+    colMeta[h]={filled,total,pct:total>0?Math.round(filled/total*100):0,unique:uniqArr.length,sample,auto,values:raw};
+    colType[h]=auto;
+  });
+}
+
+/* ============================================================
+   FILE LOADING
+   ============================================================ */
+const dz=document.getElementById('dropZone'),fi=document.getElementById('fileInput');
+dz.addEventListener('click',()=>fi.click());
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0]);});
+fi.addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0]);});
+
+function loadFile(f){
+  showLoader('טוען קובץ...');
+  readFileAuto(f,txt=>{
+    setTimeout(()=>{
+      try{
+        const res=genericParseCSV(txt);
+        if(!res||!res.data.length){hideLoader();alert('הקובץ ריק או שלא הצלחתי לפענח אותו');return;}
+        csvHeaders=res.headers;csvData=res.data;
+        sanitizeArtifacts();
+        applyFixedColumnRules();
+        document.getElementById('fileName').textContent=f.name;
+        document.getElementById('rowCount').textContent=fmtNum(csvData.length);
+        document.getElementById('colCount').textContent=csvHeaders.length;
+        document.getElementById('fileInfo').classList.remove('hidden');
+        buildColMeta();
+        renderSetupTable();
+        document.getElementById('setupCard').classList.remove('hidden');
+        buildDashboard(); // dashboard builds automatically — column setup above is optional
+      }catch(err){alert('שגיאה בעיבוד הקובץ: '+err.message);hideLoader();}
+    },50);
+  });
+}
+
+function toggleSetupBody(){
+  const body=document.getElementById('setupBody'),arrow=document.getElementById('setupToggleArrow');
+  const willShow=body.classList.contains('hidden');
+  body.classList.toggle('hidden');
+  arrow.textContent=willShow?'▴':'▾';
+}
+
+/* ============================================================
+   STEP 2 — COLUMN SETUP TABLE
+   ============================================================ */
+function renderSetupTable(){
+  const filter=document.getElementById('setupFilter').value;
+  const tbody=document.querySelector('#setupTable tbody');
+  tbody.innerHTML='';
+  csvHeaders.forEach((h,i)=>{
+    if(FIXED_COLUMNS[h.trim()])return; // fixed, permanent settings — not editable here
+    const t=colType[h];
+    if(filter==='visible'&&t==='metadata')return;
+    if(filter==='hidden'&&t!=='metadata')return;
+    const m=colMeta[h];
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${i+1}</td>
+      <td><strong>${esc(h)}</strong></td>
+      <td>${m.pct}%</td>
+      <td>${m.unique}</td>
+      <td><span class="sample-txt" title="${esc(m.sample)}">${esc(m.sample)||'—'}</span></td>
+      <td><select class="type-sel" data-col="${esc(h)}" onchange="colType[this.dataset.col]=this.value">
+        ${Object.entries(TYPE_LABELS).map(([k,lbl])=>`<option value="${k}" ${t===k?'selected':''}>${lbl}</option>`).join('')}
+      </select></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ============================================================
+   STEP 3 — BUILD DASHBOARD
+   ============================================================ */
+function getFilteredData(){
+  if(!segmentBy||segmentFilterValue===null)return csvData;
+  return csvData.filter(r=>(r[segmentBy]||'').trim()===segmentFilterValue);
+}
+
+function buildDashboard(){
+  showLoader('בונה דשבורד...');
+  setTimeout(()=>{
+    try{
+      renderStats();
+      populateSegmentSelect();
+      renderSectionTabs();
+      renderDashboardContent();
+      document.getElementById('resultsSection').classList.remove('hidden');
+      setTimeout(()=>document.getElementById('resultsSection').scrollIntoView({behavior:'smooth'}),50);
+    }catch(err){alert('שגיאה בבניית הדשבורד: '+err.message);}
+    hideLoader();
+  },50);
+}
+
+function renderStats(){
+  const data=getFilteredData();
+  const visibleCols=csvHeaders.filter(h=>colType[h]!=='metadata');
+  let html=`<div class="stat-box sb-navy"><div class="val">${fmtNum(data.length)}</div><div class="lbl">תגובות${segmentFilterValue?' (מסונן)':''}</div></div>
+    <div class="stat-box sb-gold"><div class="val">${fmtNum(visibleCols.length)}</div><div class="lbl">שאלות מנותחות</div></div>`;
+  const checkboxCols=csvHeaders.filter(h=>colType[h]==='checkbox');
+  const freetextCols=csvHeaders.filter(h=>colType[h]==='freetext');
+  html+=`<div class="stat-box sb-green"><div class="val">${fmtNum(checkboxCols.length)}</div><div class="lbl">תיבות סימון</div></div>
+    <div class="stat-box sb-orange"><div class="val">${fmtNum(freetextCols.length)}</div><div class="lbl">שאלות פתוחות</div></div>`;
+  document.getElementById('statsRow').innerHTML=html;
+}
+
+function populateSegmentSelect(){
+  const sel=document.getElementById('segmentSelect');
+  const prev=segmentBy;
+  sel.innerHTML='<option value="">— ללא פילוח —</option>';
+  csvHeaders.filter(h=>(colType[h]==='categorical'||colType[h]==='likert')&&colMeta[h].unique>=2&&colMeta[h].unique<=12)
+    .forEach(h=>sel.add(new Option(h,h)));
+  if(prev&&[...sel.options].some(o=>o.value===prev))sel.value=prev;
+  else segmentBy='';
+}
+
+function onSegmentChange(){
+  segmentBy=document.getElementById('segmentSelect').value;
+  segmentFilterValue=null;
+  document.getElementById('clearFilterBtn').classList.add('hidden');
+  renderSegmentChips();
+  renderDashboardContent();
+}
+
+function renderSegmentChips(){
+  const wrap=document.getElementById('segmentChips');
+  wrap.innerHTML='';
+  if(!segmentBy)return;
+  const counts={};
+  csvData.forEach(r=>{const v=(r[segmentBy]||'').trim();if(v)counts[v]=(counts[v]||0)+1;});
+  Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([v,c])=>{
+    const chip=document.createElement('div');
+    chip.className='chip'+(segmentFilterValue===v?' active':'');
+    chip.innerHTML=`${esc(v)} <span class="cnt">(${fmtNum(c)})</span>`;
+    chip.onclick=()=>{
+      segmentFilterValue=(segmentFilterValue===v)?null:v;
+      document.getElementById('clearFilterBtn').classList.toggle('hidden',segmentFilterValue===null);
+      renderSegmentChips();
+      renderStats();
+      renderDashboardContent();
+    };
+    wrap.appendChild(chip);
+  });
+}
+
+function clearSegmentFilter(){
+  segmentFilterValue=null;
+  document.getElementById('clearFilterBtn').classList.add('hidden');
+  renderSegmentChips();
+  renderStats();
+  renderDashboardContent();
+}
+
+function renderSectionTabs(){
+  const tabs=[
+    {id:'all',label:'🗂️ הכל'},
+    {id:'categorical',label:'📊 שאלות סגורות'},
+    {id:'likert',label:'⭐ סולמות'},
+    {id:'checkbox',label:'☑️ תיבות סימון'},
+    {id:'freetext',label:'✍️ טקסט חופשי'}
+  ];
+  const wrap=document.getElementById('sectionTabs');
+  wrap.innerHTML='';
+  tabs.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='sec-btn'+(activeSection===t.id?' active':'');
+    b.textContent=t.label;
+    b.onclick=()=>{activeSection=t.id;renderSectionTabs();renderDashboardContent();};
+    wrap.appendChild(b);
+  });
+}
+
+/* ============================================================
+   DASHBOARD CONTENT — render question cards by type
+   ============================================================ */
+const COLORS=['#1a3a5c','#c8a84b','#27ae60','#e67e22','#e74c3c','#8e44ad','#2980b9','#d35400','#16a085','#c0392b','#7f8c8d','#2c3e50'];
+
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+function valueCounts(data,col){
+  const counts={};
+  data.forEach(r=>{const v=(r[col]||'').trim();if(v)counts[v]=(counts[v]||0)+1;});
+  return counts;
+}
+
+function orderedEntries(h,counts){
+  const entries=Object.entries(counts);
+  const fixedOrder=FIXED_COLUMNS[h.trim()]&&FIXED_COLUMNS[h.trim()].order;
+  if(!fixedOrder)return entries.sort((a,b)=>b[1]-a[1]);
+  return entries.sort((a,b)=>{
+    const ia=fixedOrder.indexOf(a[0]),ib=fixedOrder.indexOf(b[0]);
+    if(ia===-1&&ib===-1)return b[1]-a[1];
+    if(ia===-1)return 1;
+    if(ib===-1)return -1;
+    return ia-ib;
+  });
+}
+
+function segmentBreakdownAllowed(){
+  if(!segmentBy)return false;
+  const segUnique=Object.keys(valueCounts(getFilteredData(),segmentBy)).length;
+  return segUnique>=2&&segUnique<=6&&segmentFilterValue===null;
+}
+
+/* ------------------------------------------------------------
+   Conditional / skip-logic detection.
+   Many surveys only show certain questions to respondents who gave a
+   specific answer earlier (e.g. "did you see our content this month?").
+   Exported CSVs don't preserve that branching, so a question that was
+   only shown to a subset looks like it just has a low response rate.
+   We auto-detect this: for a set of row-indices that answered a question,
+   look for an earlier categorical column+value whose respondents are
+   (almost) exactly that same set, and treat it as the likely "gate".
+   ------------------------------------------------------------ */
+function answeredIdxSet(cols,data){
+  const set=new Set();
+  data.forEach((r,i)=>{if(cols.some(h=>(r[h]||'').trim()!==''))set.add(i);});
+  return set;
+}
+
+function findLikelyGate(idxSet,beforeHeaderIdx,data){
+  if(!idxSet.size||beforeHeaderIdx<=0)return null;
+  let best=null,bestScore=0;
+  csvHeaders.slice(0,beforeHeaderIdx).forEach(h=>{
+    if(colType[h]!=='categorical')return;
+    const counts=valueCounts(data,h);
+    Object.keys(counts).forEach(val=>{
+      const valIdx=new Set();
+      data.forEach((r,i)=>{if((r[h]||'').trim()===val)valIdx.add(i);});
+      if(!valIdx.size)return;
+      let inter=0;idxSet.forEach(i=>{if(valIdx.has(i))inter++;});
+      if(!inter)return;
+      const containment=inter/idxSet.size,coverage=inter/valIdx.size;
+      const score=Math.min(containment,coverage);
+      if(containment>=0.85&&coverage>=0.6&&score>bestScore){bestScore=score;best={col:h,val,coveragePct:Math.round(coverage*100)};}
+    });
+  });
+  return best;
+}
+
+function gateNoteHtml(h,idxSet,data){
+  const gate=findLikelyGate(idxSet,csvHeaders.indexOf(h),data);
+  if(!gate)return '';
+  return ` · <span title="זוהה אוטומטית: כ-${gate.coveragePct}% ממי שענה כך גם ענה על שאלה זו">ⓘ נראה שנשאל רק למי שענה <strong>"${esc(gate.val)}"</strong> ב"${esc(gate.col.length>30?gate.col.slice(0,28)+'…':gate.col)}"</span>`;
+}
+
+function renderDashboardContent(){
+  const data=getFilteredData();
+  const container=document.getElementById('dashboardContent');
+  container.innerHTML='';
+  const order={categorical:0,likert:1,checkbox:2,freetext:3,numeric:0,metadata:9};
+  const cols=csvHeaders.filter(h=>colType[h]!=='metadata');
+  let shown=0;
+
+  // priority questions (core demographics) always shown first, together in
+  // a single 4-way row, optionally as a current-vs-2025 comparison.
+  const priorityCols=PRIORITY_COLUMNS.filter(h=>cols.includes(h));
+  if(priorityCols.length&&(activeSection==='all'||activeSection==='categorical')){
+    const pGrid=document.createElement('div');
+    pGrid.className='priority-grid';
+    pGrid.style.marginBottom='18px';
+    priorityCols.forEach(h=>{
+      const t=colType[h];
+      let card=null;
+      if(comparisonMode&&COMPARISON_DATA[h.trim()])card=renderComparisonCard(h,data);
+      else if(t==='categorical')card=renderCategoricalCard(h,data);
+      else if(t==='likert')card=renderLikertCard(h,data);
+      if(card){pGrid.appendChild(card);shown++;}
+    });
+    container.appendChild(pGrid);
+  }
+
+  // checkbox columns get consolidated into a single card
+  const checkboxCols=cols.filter(h=>colType[h]==='checkbox');
+  const checkboxFollowupCols=getCheckboxFollowupCols(checkboxCols);
+  if(checkboxCols.length&&(activeSection==='all'||activeSection==='checkbox')){
+    container.appendChild(renderCheckboxSummaryCard(checkboxCols,data));
+    shown++;
+  }
+
+  const grid=document.createElement('div');
+  grid.className='q-grid';
+  cols.forEach(h=>{
+    const t=colType[h];
+    if(t==='checkbox')return; // handled above
+    if(checkboxFollowupCols.has(h))return; // shown inline under checkbox "אחר"
+    if(priorityCols.includes(h))return; // already rendered above
+    if(activeSection!=='all'&&activeSection!==t&&!(activeSection==='categorical'&&t==='numeric'))return;
+    let card=null;
+    if(t==='categorical')card=renderCategoricalCard(h,data);
+    else if(t==='likert')card=renderLikertCard(h,data);
+    else if(t==='numeric')card=renderNumericCard(h,data);
+    else if(t==='freetext')card=renderFreeTextCard(h,data);
+    if(card){grid.appendChild(card);shown++;}
+  });
+  container.appendChild(grid);
+
+  document.getElementById('emptyHint').classList.toggle('hidden',shown>0);
+}
+
+function makeCardShell(title,meta){
+  const card=document.createElement('div');
+  card.className='q-card';
+  card.innerHTML=`<h3>${esc(title)}</h3><div class="q-meta">${meta.replace(/^ · /,'')}</div>`;
+  return card;
+}
+
+/* "X% ענו" is only useful when it's a partial response rate — at 100% (every
+   respondent answered) it's just noise, so it's omitted in that case. */
+function answeredPctPrefix(count,total){
+  if(total<=0)return '';
+  const pct=count/total*100;
+  return pct>=99.95?'':`${pct.toFixed(1)}% ענו · `;
+}
+
+function toggleComparison(){
+  comparisonMode=!comparisonMode;
+  const btn=document.getElementById('comparisonToggleBtn');
+  if(btn){
+    btn.textContent=comparisonMode?'✓ משווה לנתוני 2025 (לחץ להסתרה)':'🔄 הצג השוואה לנתוני 2025';
+    btn.className='btn btn-sm '+(comparisonMode?'btn-gold':'btn-navy');
+  }
+  renderDashboardContent();
+}
+
+function renderComparisonCard(h,data){
+  const cfg=COMPARISON_DATA[h.trim()];
+  const counts=valueCounts(data,h);
+  const total=Object.values(counts).reduce((s,v)=>s+v,0);
+  if(total===0)return null;
+  const card=makeCardShell(h,`${answeredPctPrefix(total,data.length)}השוואה לסקר ${esc(cfg.year)}${gateNoteHtml(h,answeredIdxSet([h],data),data)}`);
+  const cfgLabels=Object.keys(cfg.values);
+  const extraLabels=Object.keys(counts).filter(k=>!(k in cfg.values));
+  const labels=[...cfgLabels,...extraLabels];
+  const curPct=labels.map(l=>total>0?Math.round((counts[l]||0)/total*1000)/10:0);
+  const prevPct=labels.map(l=>cfg.values[l]!==undefined?cfg.values[l]:null);
+  const canvasId='chart_'+Math.random().toString(36).slice(2,10);
+  const wrap=document.createElement('div');wrap.className='chart-wrap';
+  const canvas=document.createElement('canvas');canvas.id=canvasId;wrap.appendChild(canvas);card.appendChild(wrap);
+  setTimeout(()=>{
+    destroyChart(canvasId);
+    charts[canvasId]=new Chart(canvas.getContext('2d'),{type:'bar',data:{labels,datasets:[
+      {label:`נוכחי`,data:curPct,backgroundColor:'rgba(26,58,92,.85)',borderRadius:5},
+      {label:`סקר ${cfg.year}`,data:prevPct,backgroundColor:'rgba(200,168,75,.85)',borderRadius:5}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',rtl:true,labels:{font:{size:15},padding:16}},tooltip:{rtl:true,bodyFont:{size:14},titleFont:{size:15},callbacks:{label:ctx=>ctx.parsed.y==null?' אין נתון':` ${ctx.dataset.label}: ${ctx.parsed.y}%`}}},
+      scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%',font:{size:14}}},x:{ticks:{font:{size:14}}}}}});
+  },0);
+  const tbl=document.createElement('table');
+  tbl.className='mini-table';
+  tbl.innerHTML=`<thead><tr><th>קטגוריה</th><th>נוכחי</th><th>${esc(cfg.year)}</th><th>שינוי</th></tr></thead><tbody>`+
+    labels.map((l,i)=>{
+      const cp=curPct[i],pp=prevPct[i];
+      let deltaHtml='<span style="color:#999">—</span>';
+      if(pp!=null){
+        const d=Math.round((cp-pp)*10)/10;
+        const color=d>0?'var(--green)':d<0?'#c0392b':'#888';
+        const arrow=d>0?'▲':d<0?'▼':'•';
+        deltaHtml=`<span style="color:${color};font-weight:700">${arrow} ${d>0?'+':''}${d}%</span>`;
+      }
+      return `<tr><td>${esc(l)}</td><td style="white-space:nowrap">${cp}%</td><td style="white-space:nowrap;color:#999">${pp==null?'—':pp+'%'}</td><td>${deltaHtml}</td></tr>`;
+    }).join('')+'</tbody>';
+  card.appendChild(tbl);
+  return card;
+}
+
+function renderCategoricalCard(h,data){
+  const counts=valueCounts(data,h);
+  const total=Object.values(counts).reduce((s,v)=>s+v,0);
+  if(total===0)return null;
+  const m=colMeta[h];
+  const uniqueTxt=PRIORITY_COLUMNS.includes(h)?'':`${m.unique} ערכים`;
+  const card=makeCardShell(h,`${answeredPctPrefix(total,data.length)}${uniqueTxt}${gateNoteHtml(h,answeredIdxSet([h],data),data)}`);
+  const canvasId='chart_'+btoa(unescape(encodeURIComponent(h))).replace(/[^a-zA-Z0-9]/g,'').slice(0,40)+'_'+Math.random().toString(36).slice(2,6);
+  const wrap=document.createElement('div');
+  wrap.className='chart-wrap';
+  const canvas=document.createElement('canvas');
+  canvas.id=canvasId;
+  wrap.appendChild(canvas);
+  card.appendChild(wrap);
+
+  const entries=orderedEntries(h,counts);
+  const labels=entries.map(e=>e[0].length>28?e[0].slice(0,26)+'…':e[0]);
+
+  if(segmentBreakdownAllowed()&&h!==segmentBy){
+    const segCounts=valueCounts(data,segmentBy);
+    const segVals=Object.keys(segCounts).sort((a,b)=>segCounts[b]-segCounts[a]);
+    const datasets=segVals.map((sv,i)=>{
+      const subset=data.filter(r=>(r[segmentBy]||'').trim()===sv);
+      const subTotal=subset.length;
+      const subCounts=valueCounts(subset,h);
+      return{label:sv,data:entries.map(([k])=>subTotal>0?Math.round((subCounts[k]||0)/subTotal*1000)/10:0),backgroundColor:COLORS[i%COLORS.length],borderRadius:4};
+    });
+    setTimeout(()=>{
+      destroyChart(canvasId);
+      charts[canvasId]=new Chart(canvas.getContext('2d'),{type:'bar',data:{labels,datasets},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',rtl:true,labels:{font:{size:15},padding:16}},tooltip:{rtl:true,bodyFont:{size:14},titleFont:{size:15},callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y}%`}}},
+          scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%',font:{size:14}}},x:{ticks:{font:{size:13}}}}}});
+    },0);
+  }else{
+    const counts2=entries.map(e=>e[1]);
+    const useType=entries.length<=6?'pie':'bar';
+    setTimeout(()=>{
+      destroyChart(canvasId);
+      if(useType==='pie'){
+        charts[canvasId]=new Chart(canvas.getContext('2d'),{type:'doughnut',data:{labels,datasets:[{data:counts2,backgroundColor:labels.map((_,i)=>COLORS[i%COLORS.length])}]},
+          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',rtl:true,labels:{font:{size:16},boxWidth:18,padding:16}},tooltip:{rtl:true,bodyFont:{size:14},titleFont:{size:15},callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed} (${(ctx.parsed/total*100).toFixed(1)}%)`}}}}});
+      }else{
+        charts[canvasId]=new Chart(canvas.getContext('2d'),{type:'bar',data:{labels,datasets:[{data:counts2,backgroundColor:'rgba(26,58,92,.8)',borderRadius:5}]},
+          options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{rtl:true,bodyFont:{size:14},titleFont:{size:15},callbacks:{label:ctx=>` ${fmtNum(ctx.parsed.x)} (${(ctx.parsed.x/total*100).toFixed(1)}%)`}}},
+            scales:{x:{beginAtZero:true,ticks:{font:{size:14}}},y:{ticks:{font:{size:15},autoSkip:false}}}}});
+      }
+    },0);
+  }
+
+  const tbl=document.createElement('table');
+  tbl.className='mini-table';
+  tbl.innerHTML='<tbody>'+entries.slice(0,8).map(([k,v])=>`<tr><td>${esc(k.length>40?k.slice(0,38)+'…':k)}</td><td style="text-align:left;white-space:nowrap" title="${fmtNum(v)} תשובות"><strong>${(v/total*100).toFixed(1)}%</strong></td></tr>`).join('')+'</tbody>';
+  card.appendChild(tbl);
+  return card;
+}
+
+function renderLikertCard(h,data){
+  const raw=data.map(r=>(r[h]||'').trim()).filter(v=>/^-?\d+(\.\d+)?$/.test(v)).map(Number);
+  if(!raw.length)return null;
+  const m=colMeta[h];
+  const avg=(raw.reduce((s,v)=>s+v,0)/raw.length);
+  const sorted=[...raw].sort((a,b)=>a-b);
+  const median=sorted[Math.floor(sorted.length/2)];
+  const card=makeCardShell(h,`${answeredPctPrefix(raw.length,data.length)}ממוצע <strong style="color:var(--navy)">${avg.toFixed(2)}</strong> · חציון ${median}${gateNoteHtml(h,answeredIdxSet([h],data),data)}`);
+  const canvasId='chart_'+Math.random().toString(36).slice(2,10);
+  const wrap=document.createElement('div');wrap.className='chart-wrap';
+  const canvas=document.createElement('canvas');canvas.id=canvasId;wrap.appendChild(canvas);card.appendChild(wrap);
+
+  const minV=Math.min(...raw),maxV=Math.max(...raw);
+  const scaleVals=[];for(let v=minV;v<=maxV;v++)scaleVals.push(v);
+  const dist=scaleVals.map(v=>raw.filter(x=>x===v).length);
+  const labels=scaleVals.map(String);
+
+  if(segmentBreakdownAllowed()){
+    const segCounts=valueCounts(data,segmentBy);
+    const segVals=Object.keys(segCounts).sort((a,b)=>segCounts[b]-segCounts[a]);
+    const datasets=segVals.map((sv,i)=>{
+      const subset=data.filter(r=>(r[segmentBy]||'').trim()===sv);
+      const subRaw=subset.map(r=>(r[h]||'').trim()).filter(v=>/^-?\d+(\.\d+)?$/.test(v)).map(Number);
+      const subTotal=subRaw.length;
+      return{label:sv,data:scaleVals.map(v=>subTotal>0?Math.round(subRaw.filter(x=>x===v).length/subTotal*1000)/10:0),backgroundColor:COLORS[i%COLORS.length],borderRadius:4};
+    });
+    setTimeout(()=>{
+      destroyChart(canvasId);
+      charts[canvasId]=new Chart(canvas.getContext('2d'),{type:'bar',data:{labels,datasets},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',rtl:true,labels:{font:{size:15},padding:16}},tooltip:{rtl:true,bodyFont:{size:14},titleFont:{size:15},callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y}%`}}},
+          scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%',font:{size:14}}}}}});
+    },0);
+  }else{
+    setTimeout(()=>{
+      destroyChart(canvasId);
+      charts[canvasId]=new Chart(canvas.getContext('2d'),{type:'bar',data:{labels,datasets:[{data:dist,backgroundColor:'rgba(200,168,75,.85)',borderRadius:5}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{rtl:true,bodyFont:{size:14},titleFont:{size:15},callbacks:{label:ctx=>` ${fmtNum(ctx.parsed.y)} תגובות (${(ctx.parsed.y/raw.length*100).toFixed(1)}%)`}}},
+          scales:{y:{beginAtZero:true,ticks:{font:{size:14}}},x:{title:{display:true,text:'ציון',font:{size:14}}}}}});
+    },0);
+  }
+  const highMin=Math.max(minV,maxV-2);
+  if(highMin>minV){
+    const highPct=(raw.filter(v=>v>=highMin).length/raw.length*100).toFixed(1);
+    const highRow=document.createElement('div');
+    highRow.style.cssText='margin-top:12px;font-size:1.05rem;color:var(--text)';
+    highRow.innerHTML=`<strong style="color:var(--navy)">${highPct}%</strong> ציינו ציון גבוה (${highMin}–${maxV}) מתוך מי שענה על שאלה זו`;
+    card.appendChild(highRow);
+  }
+  return card;
+}
+
+function renderNumericCard(h,data){
+  const raw=data.map(r=>(r[h]||'').trim()).filter(v=>/^-?\d+(\.\d+)?$/.test(v)).map(Number);
+  if(!raw.length)return null;
+  const avg=raw.reduce((s,v)=>s+v,0)/raw.length;
+  const card=makeCardShell(h,`${answeredPctPrefix(raw.length,data.length)}ממוצע <strong style="color:var(--navy)">${avg.toFixed(1)}</strong> · טווח ${Math.min(...raw)}–${Math.max(...raw)}`);
+  const canvasId='chart_'+Math.random().toString(36).slice(2,10);
+  const wrap=document.createElement('div');wrap.className='chart-wrap';
+  const canvas=document.createElement('canvas');canvas.id=canvasId;wrap.appendChild(canvas);card.appendChild(wrap);
+  const min=Math.min(...raw),max=Math.max(...raw);
+  const binCount=Math.min(10,Math.max(5,Math.ceil(Math.sqrt(raw.length))));
+  const binSize=(max-min)/binCount||1;
+  const bins=new Array(binCount).fill(0);
+  raw.forEach(v=>{let idx=Math.floor((v-min)/binSize);if(idx>=binCount)idx=binCount-1;if(idx<0)idx=0;bins[idx]++;});
+  const labels=bins.map((_,i)=>`${Math.round(min+i*binSize)}–${Math.round(min+(i+1)*binSize)}`);
+  setTimeout(()=>{
+    destroyChart(canvasId);
+    charts[canvasId]=new Chart(canvas.getContext('2d'),{type:'bar',data:{labels,datasets:[{data:bins,backgroundColor:'rgba(231,76,60,.75)',borderRadius:5}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{rtl:true,bodyFont:{size:14},titleFont:{size:15}}},scales:{y:{beginAtZero:true,ticks:{font:{size:14}}},x:{ticks:{font:{size:13}}}}}});
+  },0);
+  return card;
+}
+
+/* Checkbox-style option columns that come from the same multi-select
+   question are exported as consecutive columns. We group them so the
+   percentage for each option is based on respondents who actually saw
+   that question (answered at least one option in the group) — not on
+   everyone in the survey, which would understate options on questions
+   that were only shown to a subset (skip logic). */
+function groupConsecutiveCheckboxCols(visibleCols){
+  const visibleSet=new Set(visibleCols);
+  const groups=[];
+  let current=null,lastIdx=-2;
+  csvHeaders.forEach((h,idx)=>{
+    if(colType[h]!=='checkbox'||!visibleSet.has(h))return;
+    if(current&&idx===lastIdx+1)current.push(h);
+    else{current=[h];groups.push(current);}
+    lastIdx=idx;
+  });
+  return groups;
+}
+
+/* A free-text column immediately following a checkbox group that includes an
+   "אחר" option is treated as the elaboration field for that option — shown
+   inline under "אחר" in the checkbox card instead of as its own card. */
+function findCheckboxOtherFollowup(group){
+  if(!group.some(h=>h.trim()==='אחר'))return null;
+  const nextH=csvHeaders[csvHeaders.indexOf(group[group.length-1])+1];
+  if(!nextH)return null;
+  const t=colType[nextH];
+  return (t==='freetext'||t==='categorical')?nextH:null;
+}
+function getCheckboxFollowupCols(checkboxCols){
+  const set=new Set();
+  groupConsecutiveCheckboxCols(checkboxCols).forEach(group=>{
+    const fu=findCheckboxOtherFollowup(group);
+    if(fu)set.add(fu);
+  });
+  return set;
+}
+function renderCheckboxSummaryCard(cols,data){
+  const card=document.createElement('div');
+  card.className='card';
+  card.innerHTML=`<div class="card-title">☑️ תיבות סימון – אחוז שבחרו (מתוך מי שנשאל)<span style="font-size:1rem;font-weight:400;color:#888">${fmtNum(data.length)} תגובות בסה"כ</span></div>`;
+  const groups=groupConsecutiveCheckboxCols(cols);
+  const groupsWrap=document.createElement('div');
+  groupsWrap.className='checkbox-groups-grid';
+  groups.forEach((group,gi)=>{
+    const idxSet=answeredIdxSet(group,data);
+    const denom=idxSet.size;
+    const gate=findLikelyGate(idxSet,csvHeaders.indexOf(group[0]),data);
+    const followup=findCheckboxOtherFollowup(group);
+    const col=document.createElement('div');
+    col.className='checkbox-group-col';
+    const head=document.createElement('div');
+    head.style.cssText='font-weight:700;color:var(--navy);font-size:1.05rem;margin:4px 0 8px';
+    head.innerHTML=`קבוצת שאלה ${gi+1} — מבוסס על ${(denom/data.length*100).toFixed(1)}% שענו על שאלה זו${gate?` <span style="color:#888;font-weight:400">(נראה שנשאל רק למי שענה "${esc(gate.val)}" ב"${esc(gate.col.length>34?gate.col.slice(0,32)+'…':gate.col)}")</span>`:''}`;
+    col.appendChild(head);
+    const rows=group.map(h=>{
+      const checked=data.filter(r=>(r[h]||'').trim()!=='').length;
+      return{label:h,pct:denom>0?Math.round(checked/denom*1000)/10:0,checked};
+    }).sort((a,b)=>b.pct-a.pct);
+    const body=document.createElement('div');
+    rows.forEach(r=>{
+      const row=document.createElement('div');row.className='bar-row';
+      row.innerHTML=`<span class="bar-label" title="${esc(r.label)}">${esc(r.label)}</span>
+        <span class="bar-track"><span class="bar-fill" style="width:${r.pct}%"></span></span>
+        <span class="bar-pct">${r.pct}%</span>`;
+      body.appendChild(row);
+      if(followup&&r.label.trim()==='אחר'){
+        const values=data.map(rw=>(rw[followup]||'').trim()).filter(Boolean);
+        if(values.length){
+          const btn=document.createElement('button');
+          btn.className='btn btn-ghost btn-sm';
+          btn.style.cssText='margin:2px 0 10px;display:block';
+          btn.title=`${fmtNum(values.length)} תשובות`;
+          btn.textContent=`📋 ${esc(followup)} (${(values.length/data.length*100).toFixed(1)}%)`;
+          btn.onclick=()=>openTextModal(followup,values);
+          body.appendChild(btn);
+        }
+      }
+    });
+    col.appendChild(body);
+    groupsWrap.appendChild(col);
+  });
+  card.appendChild(groupsWrap);
+  return card;
+}
+
+function renderFreeTextCard(h,data){
+  const values=data.map(r=>(r[h]||'').trim()).filter(Boolean);
+  if(!values.length)return null;
+  const card=makeCardShell(h,`${answeredPctPrefix(values.length,data.length).replace(/ · $/,'')}${gateNoteHtml(h,answeredIdxSet([h],data),data)}`);
+  const btn=document.createElement('button');
+  btn.className='btn btn-ghost btn-sm';
+  btn.style.marginTop='12px';
+  btn.textContent='📋 הצג את כל התשובות';
+  btn.onclick=()=>openTextModal(h,values);
+  card.appendChild(btn);
+  return card;
+}
+
+/* ============================================================
+   FREE TEXT MODAL
+   ============================================================ */
+function openTextModal(title,values){
+  textModalAllValues=values;
+  textModalValues=values;
+  document.getElementById('textModalTitle').textContent=title;
+  document.getElementById('textModalSearch').value='';
+  renderTextModalList();
+  document.getElementById('textModalBg').classList.add('open');
+}
+function closeTextModal(){document.getElementById('textModalBg').classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeTextModal();});
+function filterTextModal(){
+  const q=document.getElementById('textModalSearch').value.trim().toLowerCase();
+  textModalValues=q?textModalAllValues.filter(v=>v.toLowerCase().includes(q)):textModalAllValues;
+  renderTextModalList();
+}
+function renderTextModalList(){
+  const list=document.getElementById('textModalList');
+  if(!textModalValues.length){list.innerHTML='<p style="color:#888;text-align:center;padding:20px">לא נמצאו תשובות מתאימות</p>';return;}
+  list.innerHTML=textModalValues.map(v=>`<div class="resp-item">${esc(v)}</div>`).join('');
+}
+</script>
+</body>
+</html>

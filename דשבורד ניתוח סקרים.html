@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>דשבורד ניתוח סקרים</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+/* Mashav brand typeface — copied locally from the mashav-infographics
+   project's font kit (../mashav-infographics/public/fonts) so this file
+   stays self-contained and portable instead of depending on a file:// path
+   outside its own folder. */
+@font-face{font-family:'SimplerPro';src:url('fonts/SimplerPro-Regular.otf') format('opentype');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'SimplerPro';src:url('fonts/SimplerPro-Semibold.otf') format('opentype');font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:'SimplerPro';src:url('fonts/SimplerPro-Bold.otf') format('opentype');font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'SimplerPro';src:url('fonts/SimplerPro-Black.otf') format('opentype');font-weight:900;font-style:normal;font-display:swap}
+:root{--navy:#1a3a5c;--gold:#c8a84b;--green:#27ae60;--orange:#e67e22;--red:#e74c3c;--purple:#8e44ad;--bg:#f0f4f9;--card:#fff;--text:#2c3e50;--border:#dde3ea;--shadow:0 2px 14px rgba(0,0,0,.07);
+  --brand-navy:#1b2a5b;--brand-orange:#e2622c;--brand-teal:#2fb6bd}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'SimplerPro','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);direction:rtl}
+header{background:linear-gradient(135deg,#1a3a5c,#0f2540);color:#fff;padding:18px 36px;display:flex;align-items:center;gap:16px;box-shadow:0 3px 12px rgba(0,0,0,.25)}
+.logo{width:52px;height:52px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+header h1{font-size:1.55rem;font-weight:700;letter-spacing:-.3px}
+header p{font-size:.88rem;opacity:.75;margin-top:3px}
+main{max-width:1320px;margin:0 auto;padding:28px 20px 60px}
+.card{background:var(--card);border-radius:14px;padding:24px;margin-bottom:24px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.card-title{font-size:1.55rem;font-weight:700;color:var(--navy);margin-bottom:16px;padding-bottom:12px;border-bottom:2.5px solid var(--gold);display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between}
+.drop-zone{border:2.5px dashed var(--border);border-radius:12px;padding:52px 24px;text-align:center;cursor:pointer;transition:all .2s;background:#fafbfd}
+.drop-zone:hover,.drop-zone.over{border-color:var(--navy);background:#edf2f9}
+.drop-zone .icon{font-size:3rem;margin-bottom:12px}
+.drop-zone h3{color:var(--navy);font-size:1.1rem;margin-bottom:6px}
+.drop-zone p{color:#888;font-size:.88rem}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 22px;border-radius:9px;border:none;cursor:pointer;font-size:.93rem;font-weight:600;transition:filter .15s,transform .1s}
+.btn:hover{filter:brightness(1.1)}.btn:active{transform:scale(.97)}
+.btn-sm{padding:6px 14px;font-size:.8rem;border-radius:7px}
+.btn-navy{background:var(--navy);color:#fff}
+.btn-gold{background:var(--gold);color:#fff}
+.btn-ghost{background:#eef1f6;color:var(--navy)}
+.file-info{margin-top:12px;padding:12px 16px;background:#edf3fc;border-radius:9px;font-size:.88rem;display:flex;gap:20px;flex-wrap:wrap;border:1px solid #d0dff0}
+.file-info span{color:#555}.file-info strong{color:var(--navy)}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{background:#f0f4f9;color:var(--navy);padding:9px 12px;text-align:right;font-weight:700;font-size:.78rem;border-bottom:2px solid var(--border);position:sticky;top:0}
+td{padding:8px 12px;border-bottom:1px solid #f0f2f5;vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbff}
+.setup-wrap{max-height:480px;overflow-y:auto;border:1px solid var(--border);border-radius:10px}
+.setup-wrap table{font-size:.82rem}
+select.type-sel{width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:.8rem;direction:rtl;background:#fff}
+.sample-txt{color:#888;font-size:.78rem;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.toolbar label{font-size:.85rem;font-weight:600;color:var(--navy)}
+.toolbar select{padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.88rem;direction:rtl;background:#fff}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;border-radius:20px;font-size:.9rem;font-weight:600;cursor:pointer;background:#eef1f6;color:var(--navy);border:1.5px solid transparent;transition:all .15s}
+.chip:hover{background:#dde7f5}
+.chip.active{background:var(--navy);color:#fff}
+.q-card{background:var(--card);border-radius:12px;padding:32px 28px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.q-card h3{font-family:'SimplerPro',sans-serif;font-weight:900;color:var(--brand-navy);font-size:18px;line-height:1.35;text-align:center;margin-bottom:8px}
+.q-meta{font-size:1rem;color:#888;margin-bottom:16px;text-align:center}
+.chart-wrap{position:relative;height:400px;margin-bottom:14px}
+.chart-wrap.pie-chart{width:320px;height:320px;margin:0 auto 14px}
+.mini-table{width:auto;margin:8px auto 0}
+.mini-table td{font-size:1.15rem;padding:8px 14px;text-align:right}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:900;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:16px;padding:26px;width:min(640px,94vw);max-height:82vh;box-shadow:0 8px 40px rgba(0,0,0,.25);display:flex;flex-direction:column}
+.modal-list{overflow-y:auto;flex:1 1 auto;min-height:0}
+.modal h3{color:var(--navy);margin-bottom:10px;font-size:1.1rem;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.modal-close-x{background:none;border:none;font-size:1.3rem;line-height:1;cursor:pointer;color:#888;padding:0 4px}
+.modal-close-x:hover{color:#333}
+.modal input[type=text]{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.88rem;margin-bottom:14px;direction:rtl}
+.resp-item{padding:10px 12px;background:#f8f9fb;border-radius:8px;margin-bottom:8px;font-size:.86rem;border:1px solid var(--border);line-height:1.5}
+.hidden{display:none!important}
+.loader-overlay{position:fixed;inset:0;background:rgba(255,255,255,.85);z-index:800;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;backdrop-filter:blur(2px)}
+.spinner{width:48px;height:48px;border:4px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-text{font-size:1rem;font-weight:600;color:var(--navy)}
+.empty-note{color:#888;font-size:.85rem;text-align:center;padding:30px}
+@media(max-width:600px){header{padding:14px 16px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">📊</div>
+  <div>
+    <h1>דשבורד ניתוח סקרים</h1>
+    <p>העלאת קובץ CSV או Excel (xlsx) - וצפייה מיידית בשאלה המרכזית של הסקר, עם אפשרות לפילוח דמוגרפי</p>
+  </div>
+</header>
+
+<main>
+
+<div class="card">
+  <div class="card-title">📂 שלב 1 – העלאת קובץ נתונים</div>
+  <div class="drop-zone" id="dropZone">
+    <div class="icon">📊</div>
+    <h3>גרור קובץ CSV או Excel (xlsx) לכאן</h3>
+    <p>ייצוא מ-Google Forms / iPanel / JotForm / Typeform וכל פלטפורמת סקרים אחרת</p>
+    <br>
+    <button class="btn btn-navy" type="button" onclick="event.stopPropagation();document.getElementById('fileInput').click()">בחר קובץ</button>
+    <input type="file" id="fileInput" accept=".csv,.tsv,.txt,.xlsx,.xls" style="display:none">
+  </div>
+  <div id="fileInfo" class="file-info hidden">
+    <span>📄 <strong id="fileName"></strong></span>
+    <span>תגובות: <strong id="rowCount"></strong></span>
+    <span>עמודות: <strong id="colCount"></strong></span>
+  </div>
+</div>
+
+<div class="card hidden" id="setupCard">
+  <div class="card-title" style="cursor:pointer" onclick="toggleSetupBody()">
+    <span>⚙️ הגדרות עמודות (לא חובה) <span id="setupToggleArrow">▾</span></span>
+    <span style="font-size:.78rem;font-weight:400;color:#888">הדשבורד נבנה אוטומטית — כאן אפשר לשנות ידנית את סוג שאלה ולעדכן</span>
+  </div>
+  <div id="setupBody" class="hidden">
+    <div class="toolbar">
+      <label>הצג:</label>
+      <select id="setupFilter" onchange="renderSetupTable()">
+        <option value="all">כל העמודות</option>
+        <option value="visible">רק עמודות שיוצגו בדשבורד</option>
+        <option value="hidden">רק עמודות מוסתרות / טכניות</option>
+      </select>
+    </div>
+    <div class="setup-wrap">
+      <table id="setupTable"><thead><tr><th>#</th><th>שם העמודה</th><th>% מענה</th><th>ערכים ייחודיים</th><th>דוגמת ערכים</th><th>סוג</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div style="margin-top:20px"><button class="btn btn-gold" onclick="buildDashboard()">🔄 עדכן דשבורד</button></div>
+  </div>
+</div>
+
+<div id="resultsSection" class="hidden">
+  <div id="dashboardContent"></div>
+</div>
+
+<div id="emptyHint" class="empty-note hidden">לא נמצאה שאלה מרכזית בקובץ (עמודה ששמה מתחיל ב-W ומספר, כגון W1). אפשר לבדוק/לשנות את סוג העמודה בהגדרות למעלה.</div>
+
+</main>
+
+<!-- LOADER -->
+<div class="loader-overlay hidden" id="loader">
+  <div class="spinner"></div>
+  <div class="loader-text" id="loaderText">טוען...</div>
+</div>
+
+<!-- FREE TEXT MODAL -->
+<div class="modal-bg" id="textModalBg" onclick="if(event.target===this)closeTextModal()">
+  <div class="modal">
+    <h3><span id="textModalTitle">תשובות חופשיות</span><button class="modal-close-x" onclick="closeTextModal()" aria-label="סגור">✕</button></h3>
+    <input type="text" id="textModalSearch" placeholder="🔍 חיפוש בתשובות..." oninput="filterTextModal()">
+    <div id="textModalList" class="modal-list"></div>
+    <div style="margin-top:14px;flex:0 0 auto"><button class="btn btn-ghost" onclick="closeTextModal()">סגור</button></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+function showLoader(msg){document.getElementById('loaderText').textContent=msg||'טוען...';document.getElementById('loader').classList.remove('hidden');}
+function hideLoader(){document.getElementById('loader').classList.add('hidden');}
+function fmtNum(n){return (n||0).toLocaleString('he-IL');}
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+/* Full-text CSV tokenizer — handles quoted fields that contain embedded
+   newlines or delimiters (common in free-text survey answers), which a
+   naive split('\n') + per-line parse would corrupt. */
+function parseCSVRows(txt,d){
+  const rows=[];let row=[],cur='',inQ=false;
+  for(let i=0;i<txt.length;i++){
+    const c=txt[i];
+    if(inQ){
+      if(c==='"'){
+        if(txt[i+1]==='"'){cur+='"';i++;}
+        else inQ=false;
+      }else cur+=c;
+    }else{
+      if(c==='"')inQ=true;
+      else if(c===d){row.push(cur);cur='';}
+      else if(c==='\r'){/* skip, \n handles row break */}
+      else if(c==='\n'){row.push(cur);rows.push(row);row=[];cur='';}
+      else cur+=c;
+    }
+  }
+  if(cur!==''||row.length){row.push(cur);rows.push(row);}
+  return rows;
+}
+
+function readTextAuto(file,callback){
+  const reader=new FileReader();
+  reader.onerror=()=>{hideLoader();alert('שגיאה בקריאת הקובץ');};
+  reader.onload=e=>{
+    try{
+      const arr=new Uint8Array(e.target.result);
+      let enc='utf-8';
+      if(arr.length>=2&&arr[0]===0xFF&&arr[1]===0xFE)enc='utf-16le';
+      else if(arr.length>=2&&arr[0]===0xFE&&arr[1]===0xFF)enc='utf-16be';
+      callback(new TextDecoder(enc).decode(arr));
+    }catch(err){hideLoader();alert('שגיאה בפענוח הקובץ: '+err.message);}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function genericParseCSV(txt){
+  txt=txt.replace(/^﻿/,'');
+  const firstLine=txt.split('\n')[0];
+  const d=firstLine.includes('\t')?'\t':firstLine.includes(';')?';':',';
+  const rows=parseCSVRows(txt.replace(/\n+$/,''),d).filter(r=>!(r.length===1&&r[0]===''));
+  return rowsToHeaderData(rows);
+}
+
+/* Shared by both the CSV tokenizer and the Excel (SheetJS array-of-arrays)
+   path — turns raw rows into {headers, data:[{col:value,...}]}. */
+function rowsToHeaderData(rows){
+  if(rows.length<2)return null;
+  const headers=rows[0].map(h=>String(h==null?'':h).trim());
+  const data=[];
+  for(let i=1;i<rows.length;i++){
+    const row=rows[i];
+    if(row.some(c=>String(c==null?'':c).trim())){
+      const obj={};
+      headers.forEach((h,j)=>{obj[h]=String(row[j]==null?'':row[j]).trim();});
+      data.push(obj);
+    }
+  }
+  return{headers,data};
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let csvHeaders=[],csvData=[],colMeta={},colType={};
+let mainBreakdown={}; // { [mainQuestionColumn]: breakdownDimensionKey|null }
+let charts={},textModalValues=[],textModalAllValues=[];
+
+const TYPE_LABELS={categorical:'קטגוריאלי (בחירה יחידה)',likert:'סולם / מספרי',numeric:'מספרי (טווח רציף)',freetext:'טקסט חופשי',metadata:'מידע טכני (מוסתר)'};
+
+/* ============================================================
+   COLUMN TYPE DETECTION
+   ============================================================ */
+// Technical/ID/timestamp columns that panel & survey-tool exports commonly
+// include (Hebrew and English variants) — always hidden, never a question.
+const METADATA_NAME_RX=/(^id$|^record ?id$|panelist ?id|response ?id|^started$|^completed$|מזהה|מספר רשומה|תאריך רשומה|date updated|date created|submission speed|user.?agent|browser|ip address|כתובת ip|^utm_|^x$)/i;
+const JOTFORM_ARTIFACT_RX=/^glikertcol[0-9a-z]+$/i;
+
+/* Some export tools (e.g. JotForm) leave internal placeholder tokens like
+   "glikertcol1059ea92da" in scale/Likert cells instead of the chosen value
+   when a matrix question renders oddly — treat those as blank. Conditional
+   (gated) questions can also come back with an explicit "no data" placeholder
+   for respondents who were never shown the question — that isn't a real
+   answer choice, so it's treated as blank too, otherwise it inflates the
+   response total and shows up as a bogus extra category in the charts. */
+const NO_ANSWER_RX=/^(אין נתונים|לא נענה|not answered|n\/?a)$/i;
+function sanitizeArtifacts(){
+  csvData.forEach(row=>{
+    csvHeaders.forEach(h=>{
+      const v=(row[h]||'').trim();
+      if(JOTFORM_ARTIFACT_RX.test(v)||NO_ANSWER_RX.test(v))row[h]='';
+    });
+  });
+}
+
+function buildColMeta(){
+  colMeta={};colType={};
+  csvHeaders.forEach(h=>{
+    const raw=csvData.map(r=>(r[h]||'').trim());
+    const nonEmpty=raw.filter(v=>v!=='');
+    const filled=nonEmpty.length,total=raw.length;
+    const uniqSet=new Set(nonEmpty);
+    const uniqArr=[...uniqSet];
+    const sample=uniqArr.slice(0,3).join(' · ');
+    let auto='freetext';
+    if(filled===0){auto='metadata';}
+    else if(/^\{.*\}$/.test(nonEmpty[0])||/^\[.*\]$/.test(nonEmpty[0])){auto='metadata';}
+    else{
+      const isNumeric=nonEmpty.every(v=>/^-?\d+(\.\d+)?$/.test(v));
+      if(isNumeric){
+        const nums=nonEmpty.map(Number);
+        const distinct=new Set(nums).size;
+        auto=(distinct<=12)?'likert':'numeric';
+      // Short-answer surveys often have long, descriptive category labels
+      // (e.g. detailed geographic-cluster or Likert-anchor text) — a plain
+      // multiple-choice question shouldn't get misfiled as free text just
+      // because its options are wordy, so the length/count caps here are
+      // generous rather than tight.
+      }else if(uniqArr.length<=20&&uniqArr.every(v=>v.length<=120)){
+        auto='categorical';
+      }else{
+        auto='freetext';
+      }
+    }
+    if(METADATA_NAME_RX.test(h))auto='metadata';
+    colMeta[h]={filled,total,pct:total>0?Math.round(filled/total*100):0,unique:uniqArr.length,sample,auto,values:raw};
+    colType[h]=auto;
+  });
+}
+
+/* The substantive question(s) being measured are named "W1", "W2"... in this
+   survey tool's export (as opposed to the descriptive demographic column
+   names) — these are the only chart(s) shown, one per main question. */
+function computeMainQuestionColumns(){
+  return csvHeaders.filter(h=>colType[h]!=='metadata'&&/^w\d+\b/i.test(h.trim()));
+}
+
+/* Fixed set of demographic breakdown dimensions this survey tool always
+   exports, identified by the English token before the first "." in the
+   column header (e.g. "Gender. מהו המגדר..."), matched against whichever
+   column in THIS file actually carries that token — not hardcoded to any
+   specific question wording, just the label convention. */
+const BREAKDOWN_DIMENSIONS=[
+  {key:'gender',label:'מגדר',rx:/^gender\b/i},
+  {key:'religiosity',label:'זהות דתית',rx:/^religiosity\b/i},
+  {key:'education',label:'רמת השכלה',rx:/^education\b/i},
+  {key:'age',label:'גיל',rx:/^age\b/i},
+  {key:'income',label:'רמת הכנסה',rx:/^family[ _]?income\b/i},
+  {key:'status',label:'סטטוס משפחתי',rx:/^status\b/i},
+  {key:'mahoz',label:'אזור מגורים',rx:/^mahoz\b/i}
+];
+function findBreakdownColumns(){
+  return BREAKDOWN_DIMENSIONS.map(dim=>{
+    const col=csvHeaders.find(h=>dim.rx.test(h.trim()));
+    if(!col)return null;
+    const m=colMeta[col];
+    if(!m||m.unique<2||m.unique>12)return null;
+    return{key:dim.key,label:dim.label,column:col};
+  }).filter(Boolean);
+}
+
+/* ============================================================
+   FILE LOADING
+   ============================================================ */
+const dz=document.getElementById('dropZone'),fi=document.getElementById('fileInput');
+dz.addEventListener('click',()=>fi.click());
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0]);});
+fi.addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0]);});
+
+function loadFile(f){
+  const ext=(f.name.split('.').pop()||'').toLowerCase();
+  if(!['csv','tsv','txt','xlsx','xls'].includes(ext)){alert('סוג קובץ לא נתמך. יש להעלות CSV/TSV/TXT או XLSX/XLS.');return;}
+  showLoader('טוען קובץ...');
+  if(ext==='xlsx'||ext==='xls'){
+    const reader=new FileReader();
+    reader.onerror=()=>{hideLoader();alert('שגיאה בקריאת הקובץ');};
+    reader.onload=e=>{
+      setTimeout(()=>{
+        try{
+          const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+          const sheet=wb.Sheets[wb.SheetNames[0]];
+          const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',raw:false});
+          const res=rowsToHeaderData(rows.filter(r=>Array.isArray(r)));
+          if(!res||!res.data.length){hideLoader();alert('הקובץ ריק או שלא הצלחתי לפענח אותו');return;}
+          finishLoad(f,res);
+        }catch(err){alert('שגיאה בעיבוד קובץ ה-Excel: '+err.message);hideLoader();}
+      },50);
+    };
+    reader.readAsArrayBuffer(f);
+  }else{
+    readTextAuto(f,txt=>{
+      setTimeout(()=>{
+        try{
+          const res=genericParseCSV(txt);
+          if(!res||!res.data.length){hideLoader();alert('הקובץ ריק או שלא הצלחתי לפענח אותו');return;}
+          finishLoad(f,res);
+        }catch(err){alert('שגיאה בעיבוד הקובץ: '+err.message);hideLoader();}
+      },50);
+    });
+  }
+}
+
+function finishLoad(f,res){
+  csvHeaders=res.headers;csvData=res.data;
+  mainBreakdown={};
+  sanitizeArtifacts();
+  document.getElementById('fileName').textContent=f.name;
+  document.getElementById('rowCount').textContent=fmtNum(csvData.length);
+  document.getElementById('colCount').textContent=csvHeaders.length;
+  document.getElementById('fileInfo').classList.remove('hidden');
+  buildColMeta();
+  renderSetupTable();
+  document.getElementById('setupCard').classList.remove('hidden');
+  buildDashboard(); // dashboard builds automatically — column setup above is optional
+}
+
+function toggleSetupBody(){
+  const body=document.getElementById('setupBody'),arrow=document.getElementById('setupToggleArrow');
+  const willShow=body.classList.contains('hidden');
+  body.classList.toggle('hidden');
+  arrow.textContent=willShow?'▴':'▾';
+}
+
+/* ============================================================
+   STEP 2 — COLUMN SETUP TABLE
+   ============================================================ */
+function renderSetupTable(){
+  const filter=document.getElementById('setupFilter').value;
+  const tbody=document.querySelector('#setupTable tbody');
+  tbody.innerHTML='';
+  csvHeaders.forEach((h,i)=>{
+    const t=colType[h];
+    if(filter==='visible'&&t==='metadata')return;
+    if(filter==='hidden'&&t!=='metadata')return;
+    const m=colMeta[h];
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${i+1}</td>
+      <td><strong>${esc(h)}</strong></td>
+      <td>${m.pct}%</td>
+      <td>${m.unique}</td>
+      <td><span class="sample-txt" title="${esc(m.sample)}">${esc(m.sample)||'—'}</span></td>
+      <td><select class="type-sel" data-col="${esc(h)}" onchange="colType[this.dataset.col]=this.value">
+        ${Object.entries(TYPE_LABELS).map(([k,lbl])=>`<option value="${k}" ${t===k?'selected':''}>${lbl}</option>`).join('')}
+      </select></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ============================================================
+   STEP 3 — BUILD DASHBOARD
+   ============================================================ */
+function buildDashboard(){
+  showLoader('בונה דשבורד...');
+  setTimeout(()=>{
+    try{
+      renderDashboardContent();
+      document.getElementById('resultsSection').classList.remove('hidden');
+      setTimeout(()=>document.getElementById('resultsSection').scrollIntoView({behavior:'smooth'}),50);
+    }catch(err){alert('שגיאה בבניית הדשבורד: '+err.message);}
+    hideLoader();
+  },50);
+}
+
+/* ============================================================
+   DASHBOARD CONTENT — the main question(s) only, each with its own
+   demographic-breakdown chip row
+   ============================================================ */
+// Brand navy/orange first (matches the Canva share-card palette), then a
+// handful of extra hues for breakdown dimensions with more than 2 values.
+const COLORS=['#1b2a5b','#e2622c','#2fb6bd','#c8a84b','#27ae60','#8e44ad','#2980b9','#d35400','#16a085','#c0392b','#7f8c8d','#3f5a8a'];
+
+/* Rounding every slice's percentage independently (Math.round) can push the
+   displayed total above or below 100% (e.g. 16.7/16.7/16.7/50 → 17+17+17+50
+   = 101). This adjusts the rounded values so they always sum to exactly
+   100: while the total overshoots, knock 1% off whichever value(s) are
+   currently lowest (ties broken at random); while it undershoots, add 1%
+   to whichever are currently highest. */
+function wholePercentsSumming100(values){
+  const total=values.reduce((s,v)=>s+v,0);
+  if(total<=0)return values.map(()=>0);
+  const exact=values.map(v=>v/total*100);
+  const result=exact.map(v=>Math.floor(v));
+  const remainders=exact.map((v,i)=>v-result[i]);
+  // Each floor's own fractional remainder decides how "deserving" it is of the
+  // extra point: 14.8 (remainder .8, very close to 15) is far more deserving
+  // than 49.6 or 35.6 (remainder .6 each) — not whichever category happens to
+  // have the smallest raw share. Ties broken at random.
+  let seatsLeft=100-result.reduce((s,v)=>s+v,0);
+  const assigned=new Array(values.length).fill(false);
+  while(seatsLeft>0){
+    const maxRem=Math.max(...remainders.filter((_,i)=>!assigned[i]));
+    const candidates=remainders.map((r,i)=>(!assigned[i]&&r===maxRem)?i:-1).filter(i=>i>=0);
+    const pick=candidates[Math.floor(Math.random()*candidates.length)];
+    result[pick]++;
+    assigned[pick]=true;
+    seatsLeft--;
+  }
+  return result;
+}
+
+/* Draws "50%" etc. centered on each slice of a pie/doughnut chart. Uses
+   Chart.js's own ArcElement.tooltipPosition() for the point (the same
+   angle-bisector/mid-radius calculation Chart.js uses for its tooltips,
+   rather than a third-party plugin — chartjs-plugin-datalabels' anchor
+   positioning turned out to clip/mis-place labels on wide (>90°) slices in
+   this Chart.js version). Registered per-chart, not globally. */
+function centerLabelsPlugin(){
+  return{id:'centerPercentLabels',afterDatasetsDraw(chart){
+    const ctx=chart.ctx;
+    const meta=chart.getDatasetMeta(0);
+    const data=chart.data.datasets[0].data;
+    const percents=wholePercentsSumming100(data);
+    ctx.save();
+    ctx.fillStyle='#fff';
+    ctx.font="900 22px 'SimplerPro',sans-serif";
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.direction='ltr';
+    meta.data.forEach((arc,i)=>{
+      const pos=arc.tooltipPosition();
+      ctx.fillText(percents[i]+'%',pos.x,pos.y);
+    });
+    ctx.restore();
+  }};
+}
+
+/* The main question's column header carries a "W1.", "W2."... prefix (this
+   survey tool's internal question-number tag) that's meaningful for
+   detecting the main question but shouldn't be shown to a reader. */
+function stripMainQuestionPrefix(h){return h.replace(/^w\d+\.\s*/i,'').trim();}
+
+/* The "אזור מגורים" (Mahoz) breakdown values are long geographic-cluster
+   descriptions ("מרכז ירושלים – ירושלים, בית שמש..."); only the short
+   district name before the dash is meaningful as a chart/legend label. */
+function shortenMahozLabel(v){
+  const m=String(v||'').split(/\s*[–\-—]\s*/);
+  return m[0].trim()||v;
+}
+
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+function valueCounts(data,col){
+  const counts={};
+  data.forEach(r=>{const v=(r[col]||'').trim();if(v)counts[v]=(counts[v]||0)+1;});
+  return counts;
+}
+
+function orderedEntries(counts){
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+}
+
+/* ------------------------------------------------------------
+   Conditional / skip-logic detection.
+   Many surveys only show certain questions to respondents who gave a
+   specific answer earlier (e.g. a screener question). Exported files
+   don't preserve that branching, so a question that was only shown to a
+   subset looks like it just has a low response rate. We auto-detect this:
+   for the set of row-indices that answered a question, look for an earlier
+   categorical column+value whose respondents are (almost) exactly that
+   same set, and treat it as the likely "gate".
+   ------------------------------------------------------------ */
+function answeredIdxSet(cols,data){
+  const set=new Set();
+  data.forEach((r,i)=>{if(cols.some(h=>(r[h]||'').trim()!==''))set.add(i);});
+  return set;
+}
+
+function findLikelyGate(idxSet,beforeHeaderIdx,data){
+  if(!idxSet.size||beforeHeaderIdx<=0)return null;
+  let best=null,bestScore=0;
+  csvHeaders.slice(0,beforeHeaderIdx).forEach(h=>{
+    if(colType[h]!=='categorical')return;
+    const counts=valueCounts(data,h);
+    Object.keys(counts).forEach(val=>{
+      const valIdx=new Set();
+      data.forEach((r,i)=>{if((r[h]||'').trim()===val)valIdx.add(i);});
+      if(!valIdx.size)return;
+      let inter=0;idxSet.forEach(i=>{if(valIdx.has(i))inter++;});
+      if(!inter)return;
+      const containment=inter/idxSet.size,coverage=inter/valIdx.size;
+      const score=Math.min(containment,coverage);
+      if(containment>=0.85&&coverage>=0.6&&score>bestScore){bestScore=score;best={col:h,val,coveragePct:Math.round(coverage*100)};}
+    });
+  });
+  return best;
+}
+
+function gateNoteHtml(h,idxSet,data){
+  const gate=findLikelyGate(idxSet,csvHeaders.indexOf(h),data);
+  if(!gate)return '';
+  return ` · <span title="זוהה אוטומטית: כ-${gate.coveragePct}% ממי שענה כך גם ענה על שאלה זו">ⓘ נראה שנשאל רק למי שענה <strong>"${esc(gate.val)}"</strong> ב"${esc(gate.col.length>30?gate.col.slice(0,28)+'…':gate.col)}"</span>`;
+}
+
+function renderDashboardContent(){
+  const container=document.getElementById('dashboardContent');
+  container.innerHTML='';
+  const mainCols=computeMainQuestionColumns();
+  let shown=0;
+  mainCols.forEach(h=>{
+    const card=renderMainQuestionCard(h);
+    if(card){card.style.marginBottom='18px';container.appendChild(card);shown++;}
+  });
+  document.getElementById('emptyHint').classList.toggle('hidden',shown>0);
+}
+
+function makeCardShell(title,meta){
+  const card=document.createElement('div');
+  card.className='q-card';
+  card.innerHTML=`<h3>${esc(title)}</h3><div class="q-meta">${meta.replace(/^ · /,'')}</div>`;
+  return card;
+}
+
+function makeChip(label,active,onClick){
+  const chip=document.createElement('button');
+  chip.type='button';
+  chip.className='chip'+(active?' active':'');
+  chip.textContent=label;
+  chip.onclick=onClick;
+  return chip;
+}
+
+/* Builds the card for one main question, then — for categorical/likert
+   questions — inserts a row of "פילוח לפי ..." chips (one per demographic
+   dimension found in this file) right under the title. Picking a chip
+   re-renders the whole dashboard with that breakdown applied to this
+   question's chart; picking "ללא פילוח" goes back to the overall view. */
+function renderMainQuestionCard(h){
+  const t=colType[h];
+  const breakdownCols=(t==='categorical'||t==='likert')?findBreakdownColumns():[];
+  const selectedKey=mainBreakdown[h]||null;
+  const selectedDim=breakdownCols.find(d=>d.key===selectedKey)||null;
+
+  let card=null;
+  if(t==='categorical')card=renderCategoricalCard(h,csvData,selectedDim);
+  else if(t==='likert')card=renderLikertCard(h,csvData,selectedDim);
+  else if(t==='numeric')card=renderNumericCard(h,csvData);
+  else if(t==='freetext')card=renderFreeTextCard(h,csvData);
+  if(!card)return null;
+
+  if(breakdownCols.length){
+    const chipRow=document.createElement('div');
+    chipRow.style.cssText='display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:20px';
+    chipRow.appendChild(makeChip('ללא פילוח',!selectedKey,()=>{mainBreakdown[h]=null;renderDashboardContent();}));
+    breakdownCols.forEach(d=>{
+      chipRow.appendChild(makeChip('פילוח לפי '+d.label,selectedKey===d.key,()=>{mainBreakdown[h]=d.key;renderDashboardContent();}));
+    });
+    card.appendChild(chipRow);
+  }
+  return card;
+}
+
+/* "X% ענו" is only useful when it's a partial response rate — at 100% (every
+   respondent answered) it's just noise, so it's omitted in that case. */
+function answeredPctPrefix(count,total){
+  if(total<=0)return '';
+  const pct=count/total*100;
+  return pct>=99.95?'':`${pct.toFixed(1)}% ענו · `;
+}
+
+function renderCategoricalCard(h,data,breakdownDim){
+  const counts=valueCounts(data,h);
+  const total=Object.values(counts).reduce((s,v)=>s+v,0);
+  if(total===0)return null;
+  const card=makeCardShell(stripMainQuestionPrefix(h),`${answeredPctPrefix(total,data.length).replace(/ · $/,'')}${gateNoteHtml(h,answeredIdxSet([h],data),data)}`);
+  const canvasId='chart_'+Math.random().toString(36).slice(2,10);
+  const canvas=document.createElement('canvas');
+  canvas.id=canvasId;
+
+  const entries=orderedEntries(counts);
+  const labels=entries.map(e=>e[0].length>28?e[0].slice(0,26)+'…':e[0]);
+  const usePie=!breakdownDim&&entries.length<=6;
+
+  const wrap=document.createElement('div');wrap.className='chart-wrap'+(usePie?' pie-chart':'');wrap.appendChild(canvas);
+  card.appendChild(wrap);
+
+  if(breakdownDim){
+    const segCol=breakdownDim.column;
+    const shortLabel=sv=>breakdownDim.key==='mahoz'?shortenMahozLabel(sv):sv;
+    const segCounts=valueCounts(data,segCol);
+    const segVals=Object.keys(segCounts).sort((a,b)=>segCounts[b]-segCounts[a]);
+    const datasets=segVals.map((sv,i)=>{
+      const subset=data.filter(r=>(r[segCol]||'').trim()===sv);
+      const subTotal=subset.length;
+      const subCounts=valueCounts(subset,h);
+      return{label:shortLabel(sv),data:entries.map(([k])=>subTotal>0?Math.round((subCounts[k]||0)/subTotal*1000)/10:0),backgroundColor:COLORS[i%COLORS.length],borderRadius:4};
+    });
+    setTimeout(()=>{
+      destroyChart(canvasId);
+      charts[canvasId]=new Chart(canvas.getContext('2d'),{type:'bar',data:{labels,datasets},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',rtl:true,labels:{font:{size:15},padding:16}},tooltip:{rtl:true,bodyFont:{size:14},titleFont:{size:15},callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y}%`}}},
+          scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%',font:{size:14}}},x:{ticks:{font:{size:13}}}}}});
+    },0);
+  }else{
+    const counts2=entries.map(e=>e[1]);
+    setTimeout(()=>{
+      destroyChart(canvasId);
+      if(usePie){
+        charts[canvasId]=new Chart(canvas.getContext('2d'),{type:'doughnut',data:{labels,datasets:[{data:counts2,backgroundColor:labels.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:0}]},
+          plugins:[centerLabelsPlugin()],
+          options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{
+            legend:{display:false},
+            tooltip:{rtl:true,bodyFont:{size:14},titleFont:{size:15},callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed} (${(ctx.parsed/total*100).toFixed(1)}%)`}}
+          }}});
+      }else{
+        charts[canvasId]=new Chart(canvas.getContext('2d'),{type:'bar',data:{labels,datasets:[{data:counts2,backgroundColor:'rgba(26,58,92,.8)',borderRadius:5}]},
+          options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{rtl:true,bodyFont:{size:14},titleFont:{size:15},callbacks:{label:ctx=>` ${fmtNum(ctx.parsed.x)} (${(ctx.parsed.x/total*100).toFixed(1)}%)`}}},
+            scales:{x:{beginAtZero:true,ticks:{font:{size:14}}},y:{ticks:{font:{size:15},autoSkip:false}}}}});
+      }
+    },0);
+  }
+
+  const tbl=document.createElement('table');
+  tbl.className='mini-table';
+  tbl.innerHTML='<tbody>'+entries.slice(0,8).map(([k,v])=>`<tr><td>${esc(k)}</td><td title="${fmtNum(v)} תשובות"><strong>${(v/total*100).toFixed(1)}%</strong></td></tr>`).join('')+'</tbody>';
+  card.appendChild(tbl);
+  return card;
+}
+
+function renderLikertCard(h,data,breakdownDim){
+  const raw=data.map(r=>(r[h]||'').trim()).filter(v=>/^-?\d+(\.\d+)?$/.test(v)).map(Number);
+  if(!raw.length)return null;
+  const avg=(raw.reduce((s,v)=>s+v,0)/raw.length);
+  const sorted=[...raw].sort((a,b)=>a-b);
+  const median=sorted[Math.floor(sorted.length/2)];
+  const card=makeCardShell(stripMainQuestionPrefix(h),`${answeredPctPrefix(raw.length,data.length)}ממוצע <strong style="color:var(--navy)">${avg.toFixed(2)}</strong> · חציון ${median}${gateNoteHtml(h,answeredIdxSet([h],data),data)}`);
+  const canvasId='chart_'+Math.random().toString(36).slice(2,10);
+  const wrap=document.createElement('div');wrap.className='chart-wrap';
+  const canvas=document.createElement('canvas');canvas.id=canvasId;wrap.appendChild(canvas);card.appendChild(wrap);
+
+  const minV=Math.min(...raw),maxV=Math.max(...raw);
+  const scaleVals=[];for(let v=minV;v<=maxV;v++)scaleVals.push(v);
+  const dist=scaleVals.map(v=>raw.filter(x=>x===v).length);
+  const labels=scaleVals.map(String);
+
+  if(breakdownDim){
+    const segCol=breakdownDim.column;
+    const shortLabel=sv=>breakdownDim.key==='mahoz'?shortenMahozLabel(sv):sv;
+    const segCounts=valueCounts(data,segCol);
+    const segVals=Object.keys(segCounts).sort((a,b)=>segCounts[b]-segCounts[a]);
+    const datasets=segVals.map((sv,i)=>{
+      const subset=data.filter(r=>(r[segCol]||'').trim()===sv);
+      const subRaw=subset.map(r=>(r[h]||'').trim()).filter(v=>/^-?\d+(\.\d+)?$/.test(v)).map(Number);
+      const subTotal=subRaw.length;
+      return{label:shortLabel(sv),data:scaleVals.map(v=>subTotal>0?Math.round(subRaw.filter(x=>x===v).length/subTotal*1000)/10:0),backgroundColor:COLORS[i%COLORS.length],borderRadius:4};
+    });
+    setTimeout(()=>{
+      destroyChart(canvasId);
+      charts[canvasId]=new Chart(canvas.getContext('2d'),{type:'bar',data:{labels,datasets},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',rtl:true,labels:{font:{size:15},padding:16}},tooltip:{rtl:true,bodyFont:{size:14},titleFont:{size:15},callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y}%`}}},
+          scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%',font:{size:14}}}}}});
+    },0);
+  }else{
+    setTimeout(()=>{
+      destroyChart(canvasId);
+      charts[canvasId]=new Chart(canvas.getContext('2d'),{type:'bar',data:{labels,datasets:[{data:dist,backgroundColor:'rgba(200,168,75,.85)',borderRadius:5}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{rtl:true,bodyFont:{size:14},titleFont:{size:15},callbacks:{label:ctx=>` ${fmtNum(ctx.parsed.y)} תגובות (${(ctx.parsed.y/raw.length*100).toFixed(1)}%)`}}},
+          scales:{y:{beginAtZero:true,ticks:{font:{size:14}}},x:{title:{display:true,text:'ציון',font:{size:14}}}}}});
+    },0);
+  }
+  const highMin=Math.max(minV,maxV-2);
+  if(highMin>minV){
+    const highPct=(raw.filter(v=>v>=highMin).length/raw.length*100).toFixed(1);
+    const highRow=document.createElement('div');
+    highRow.style.cssText='margin-top:12px;font-size:1.05rem;color:var(--text)';
+    highRow.innerHTML=`<strong style="color:var(--navy)">${highPct}%</strong> ציינו ציון גבוה (${highMin}–${maxV}) מתוך מי שענה על שאלה זו`;
+    card.appendChild(highRow);
+  }
+  return card;
+}
+
+function renderNumericCard(h,data){
+  const raw=data.map(r=>(r[h]||'').trim()).filter(v=>/^-?\d+(\.\d+)?$/.test(v)).map(Number);
+  if(!raw.length)return null;
+  const avg=raw.reduce((s,v)=>s+v,0)/raw.length;
+  const card=makeCardShell(stripMainQuestionPrefix(h),`${answeredPctPrefix(raw.length,data.length)}ממוצע <strong style="color:var(--navy)">${avg.toFixed(1)}</strong> · טווח ${Math.min(...raw)}–${Math.max(...raw)}`);
+  const canvasId='chart_'+Math.random().toString(36).slice(2,10);
+  const wrap=document.createElement('div');wrap.className='chart-wrap';
+  const canvas=document.createElement('canvas');canvas.id=canvasId;wrap.appendChild(canvas);card.appendChild(wrap);
+  const min=Math.min(...raw),max=Math.max(...raw);
+  const binCount=Math.min(10,Math.max(5,Math.ceil(Math.sqrt(raw.length))));
+  const binSize=(max-min)/binCount||1;
+  const bins=new Array(binCount).fill(0);
+  raw.forEach(v=>{let idx=Math.floor((v-min)/binSize);if(idx>=binCount)idx=binCount-1;if(idx<0)idx=0;bins[idx]++;});
+  const labels=bins.map((_,i)=>`${Math.round(min+i*binSize)}–${Math.round(min+(i+1)*binSize)}`);
+  setTimeout(()=>{
+    destroyChart(canvasId);
+    charts[canvasId]=new Chart(canvas.getContext('2d'),{type:'bar',data:{labels,datasets:[{data:bins,backgroundColor:'rgba(231,76,60,.75)',borderRadius:5}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{rtl:true,bodyFont:{size:14},titleFont:{size:15}}},scales:{y:{beginAtZero:true,ticks:{font:{size:14}}},x:{ticks:{font:{size:13}}}}}});
+  },0);
+  return card;
+}
+
+function renderFreeTextCard(h,data){
+  const values=data.map(r=>(r[h]||'').trim()).filter(Boolean);
+  if(!values.length)return null;
+  const card=makeCardShell(stripMainQuestionPrefix(h),`${answeredPctPrefix(values.length,data.length).replace(/ · $/,'')}${gateNoteHtml(h,answeredIdxSet([h],data),data)}`);
+  const btn=document.createElement('button');
+  btn.className='btn btn-ghost btn-sm';
+  btn.style.marginTop='12px';
+  btn.textContent='📋 הצג את כל התשובות';
+  btn.onclick=()=>openTextModal(h,values);
+  card.appendChild(btn);
+  return card;
+}
+
+/* ============================================================
+   FREE TEXT MODAL
+   ============================================================ */
+function openTextModal(title,values){
+  textModalAllValues=values;
+  textModalValues=values;
+  document.getElementById('textModalTitle').textContent=title;
+  document.getElementById('textModalSearch').value='';
+  renderTextModalList();
+  document.getElementById('textModalBg').classList.add('open');
+}
+function closeTextModal(){document.getElementById('textModalBg').classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeTextModal();});
+function filterTextModal(){
+  const q=document.getElementById('textModalSearch').value.trim().toLowerCase();
+  textModalValues=q?textModalAllValues.filter(v=>v.toLowerCase().includes(q)):textModalAllValues;
+  renderTextModalList();
+}
+function renderTextModalList(){
+  const list=document.getElementById('textModalList');
+  if(!textModalValues.length){list.innerHTML='<p style="color:#888;text-align:center;padding:20px">לא נמצאו תשובות מתאימות</p>';return;}
+  list.innerHTML=textModalValues.map(v=>`<div class="resp-item">${esc(v)}</div>`).join('');
+}
+</script>
+</body>
+</html>
