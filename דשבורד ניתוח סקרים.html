@@ -730,7 +730,7 @@ function renderMainQuestionCard(h,data){
     chipRow.style.cssText='display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:20px';
     chipRow.appendChild(makeChip('ללא פילוח',!selectedKey,()=>{mainBreakdown[h]=null;renderDashboardContent();}));
     breakdownCols.forEach(d=>{
-      chipRow.appendChild(makeChip('פילוח לפי '+d.label,selectedKey===d.key,()=>{mainBreakdown[h]=d.key;renderDashboardContent();}));
+      chipRow.appendChild(makeChip(d.label,selectedKey===d.key,()=>{mainBreakdown[h]=d.key;renderDashboardContent();}));
     });
     card.appendChild(chipRow);
   }
