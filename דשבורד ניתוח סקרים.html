@@ -46,13 +46,6 @@ th{background:#f0f4f9;color:var(--navy);padding:9px 12px;text-align:right;font-w
 td{padding:8px 12px;border-bottom:1px solid #f0f2f5;vertical-align:top}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:#fafbff}
-.setup-wrap{max-height:480px;overflow-y:auto;border:1px solid var(--border);border-radius:10px}
-.setup-wrap table{font-size:.82rem}
-select.type-sel{width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:.8rem;direction:rtl;background:#fff}
-.sample-txt{color:#888;font-size:.78rem;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
-.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
-.toolbar label{font-size:.85rem;font-weight:600;color:var(--navy)}
-.toolbar select{padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.88rem;direction:rtl;background:#fff}
 .chip{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;border-radius:20px;font-size:.9rem;font-weight:600;cursor:pointer;background:#eef1f6;color:var(--navy);border:1.5px solid transparent;transition:all .15s}
 .chip:hover{background:#dde7f5}
 .chip.active{background:var(--navy);color:#fff}
@@ -121,32 +114,11 @@ select.type-sel{width:100%;padding:6px 8px;border:1.5px solid var(--border);bord
   </div>
 </div>
 
-<div class="card hidden" id="setupCard">
-  <div class="card-title" style="cursor:pointer" onclick="toggleSetupBody()">
-    <span>⚙️ הגדרות עמודות (לא חובה) <span id="setupToggleArrow">▾</span></span>
-    <span style="font-size:.78rem;font-weight:400;color:#888">הדשבורד נבנה אוטומטית — כאן אפשר לשנות ידנית את סוג שאלה ולעדכן</span>
-  </div>
-  <div id="setupBody" class="hidden">
-    <div class="toolbar">
-      <label>הצג:</label>
-      <select id="setupFilter" onchange="renderSetupTable()">
-        <option value="all">כל העמודות</option>
-        <option value="visible">רק עמודות שיוצגו בדשבורד</option>
-        <option value="hidden">רק עמודות מוסתרות / טכניות</option>
-      </select>
-    </div>
-    <div class="setup-wrap">
-      <table id="setupTable"><thead><tr><th>#</th><th>שם העמודה</th><th>% מענה</th><th>ערכים ייחודיים</th><th>דוגמת ערכים</th><th>סוג</th></tr></thead><tbody></tbody></table>
-    </div>
-    <div style="margin-top:20px"><button class="btn btn-gold" onclick="buildDashboard()">🔄 עדכן דשבורד</button></div>
-  </div>
-</div>
-
 <div id="resultsSection" class="hidden">
   <div id="dashboardContent"></div>
 </div>
 
-<div id="emptyHint" class="empty-note hidden">לא נמצאה שאלה מרכזית בקובץ (עמודה ששמה מתחיל ב-W ומספר, כגון W1). אפשר לבדוק/לשנות את סוג העמודה בהגדרות למעלה.</div>
+<div id="emptyHint" class="empty-note hidden">לא נמצאה שאלה מרכזית בקובץ (עמודה ששמה מתחיל ב-W ומספר, כגון W1).</div>
 
 </main>
 
@@ -269,8 +241,6 @@ function rowsToHeaderData(rows){
 let csvHeaders=[],csvData=[],colMeta={},colType={};
 let mainBreakdown={}; // { [mainQuestionColumn]: breakdownDimensionKey|null }
 let charts={},textModalValues=[],textModalAllValues=[];
-
-const TYPE_LABELS={categorical:'קטגוריאלי (בחירה יחידה)',likert:'סולם / מספרי',numeric:'מספרי (טווח רציף)',freetext:'טקסט חופשי',metadata:'מידע טכני (מוסתר)'};
 
 /* ============================================================
    COLUMN TYPE DETECTION
@@ -442,45 +412,11 @@ function finishLoad(f,res){
   document.getElementById('colCount').textContent=csvHeaders.length;
   document.getElementById('fileInfo').classList.remove('hidden');
   buildColMeta();
-  renderSetupTable();
-  document.getElementById('setupCard').classList.remove('hidden');
-  buildDashboard(); // dashboard builds automatically — column setup above is optional
-}
-
-function toggleSetupBody(){
-  const body=document.getElementById('setupBody'),arrow=document.getElementById('setupToggleArrow');
-  const willShow=body.classList.contains('hidden');
-  body.classList.toggle('hidden');
-  arrow.textContent=willShow?'▴':'▾';
+  buildDashboard();
 }
 
 /* ============================================================
-   STEP 2 — COLUMN SETUP TABLE
-   ============================================================ */
-function renderSetupTable(){
-  const filter=document.getElementById('setupFilter').value;
-  const tbody=document.querySelector('#setupTable tbody');
-  tbody.innerHTML='';
-  csvHeaders.forEach((h,i)=>{
-    const t=colType[h];
-    if(filter==='visible'&&t==='metadata')return;
-    if(filter==='hidden'&&t!=='metadata')return;
-    const m=colMeta[h];
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${i+1}</td>
-      <td><strong>${esc(h)}</strong></td>
-      <td>${m.pct}%</td>
-      <td>${m.unique}</td>
-      <td><span class="sample-txt" title="${esc(m.sample)}">${esc(m.sample)||'—'}</span></td>
-      <td><select class="type-sel" data-col="${esc(h)}" onchange="colType[this.dataset.col]=this.value">
-        ${Object.entries(TYPE_LABELS).map(([k,lbl])=>`<option value="${k}" ${t===k?'selected':''}>${lbl}</option>`).join('')}
-      </select></td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-/* ============================================================
-   STEP 3 — BUILD DASHBOARD
+   BUILD DASHBOARD
    ============================================================ */
 function buildDashboard(){
   showLoader('בונה דשבורד...');
