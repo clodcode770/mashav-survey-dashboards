@@ -49,6 +49,11 @@ tr:hover td{background:#fafbff}
 .chip{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;border-radius:20px;font-size:.9rem;font-weight:600;cursor:pointer;background:#eef1f6;color:var(--navy);border:1.5px solid transparent;transition:all .15s}
 .chip:hover{background:#dde7f5}
 .chip.active{background:var(--navy);color:#fff}
+.adv-filter-row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
+.adv-filter-item{display:flex;flex-direction:column;gap:4px;min-width:170px}
+.adv-filter-item label{font-size:.78rem;font-weight:600;color:var(--navy)}
+.adv-filter-item select{padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;direction:rtl;background:#fff}
+.adv-filter-summary{font-size:.85rem;color:#555;margin-top:14px}
 .q-card{background:var(--card);border-radius:12px;padding:32px 28px;box-shadow:var(--shadow);border:1px solid var(--border)}
 .q-card h3{font-family:'Heebo',sans-serif;font-weight:900;color:var(--brand-navy);font-size:18px;line-height:1.35;text-align:center;margin-bottom:8px}
 .q-meta{font-size:1rem;color:#888;margin-bottom:16px;text-align:center}
@@ -111,7 +116,16 @@ tr:hover td{background:#fafbff}
     <span>📄 <strong id="fileName"></strong></span>
     <span>תגובות: <strong id="rowCount"></strong></span>
     <span>עמודות: <strong id="colCount"></strong></span>
+    <button class="btn btn-ghost btn-sm" type="button" onclick="downloadOriginalFile()">⬇️ הורדת הקובץ</button>
   </div>
+</div>
+
+<div class="card hidden" id="advFilterCard">
+  <div class="card-title">🎯 פילוח מתקדם (סינון משולב)
+    <button class="btn btn-ghost btn-sm" type="button" onclick="clearAdvancedFilters()">נקה סינון</button>
+  </div>
+  <div class="adv-filter-row" id="advFilterRow"></div>
+  <div class="adv-filter-summary" id="advFilterSummary"></div>
 </div>
 
 <div id="resultsSection" class="hidden">
@@ -240,6 +254,8 @@ function rowsToHeaderData(rows){
    ============================================================ */
 let csvHeaders=[],csvData=[],colMeta={},colType={};
 let mainBreakdown={}; // { [mainQuestionColumn]: breakdownDimensionKey|null }
+let advancedFilters={}; // { [breakdownDimensionKey]: selectedLabel|null } — combined (AND) across dimensions
+let currentFile=null;
 let charts={},textModalValues=[],textModalAllValues=[];
 
 /* ============================================================
@@ -406,13 +422,28 @@ function loadFile(f){
 function finishLoad(f,res){
   csvHeaders=res.headers;csvData=res.data;
   mainBreakdown={};
+  advancedFilters={};
+  currentFile=f;
   sanitizeArtifacts();
   document.getElementById('fileName').textContent=f.name;
   document.getElementById('rowCount').textContent=fmtNum(csvData.length);
   document.getElementById('colCount').textContent=csvHeaders.length;
   document.getElementById('fileInfo').classList.remove('hidden');
   buildColMeta();
+  renderAdvancedFilterBar();
   buildDashboard();
+}
+
+/* Lets the user pull back the exact file they just uploaded (e.g. to
+   re-share it) straight from the page, without having to keep their own
+   copy around. */
+function downloadOriginalFile(){
+  if(!currentFile)return;
+  const url=URL.createObjectURL(currentFile);
+  const a=document.createElement('a');
+  a.href=url;a.download=currentFile.name;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
 /* ============================================================
@@ -506,6 +537,11 @@ function shortenMahozLabel(v){
   return m[0].trim()||v;
 }
 
+/* Display/grouping label for a raw breakdown-dimension value — shared by the
+   per-question breakdown charts and the advanced (combined) filter bar so
+   both group Mahoz's long geographic strings the same way. */
+function dimValueLabel(dim,raw){return dim.key==='mahoz'?shortenMahozLabel(raw):raw;}
+
 /* Other breakdown dimensions (gender, religiosity...) read fine ordered by
    count, but age groups read as noise unless kept chronological — youngest
    to oldest — regardless of which bucket happens to be largest. */
@@ -571,13 +607,82 @@ function gateNoteHtml(h,idxSet,data){
   return ` · <span title="זוהה אוטומטית: כ-${gate.coveragePct}% ממי שענה כך גם ענה על שאלה זו">ⓘ נראה שנשאל רק למי שענה <strong>"${esc(gate.val)}"</strong> ב"${esc(gate.col.length>30?gate.col.slice(0,28)+'…':gate.col)}"</span>`;
 }
 
+/* ------------------------------------------------------------
+   ADVANCED (COMBINED) FILTER — lets the reader narrow the whole dashboard
+   down to a specific segment by picking a value in more than one
+   demographic dimension at once (e.g. גיל=עד 24 + זהות דתית=דתי +
+   אזור מגורים=תל אביב), unlike the per-question chips which only compare
+   one dimension at a time. All active selections are combined with AND.
+   ------------------------------------------------------------ */
+function renderAdvancedFilterBar(){
+  const card=document.getElementById('advFilterCard');
+  const row=document.getElementById('advFilterRow');
+  row.innerHTML='';
+  const dims=findBreakdownColumns();
+  if(!dims.length){card.classList.add('hidden');return;}
+  card.classList.remove('hidden');
+  dims.forEach(dim=>{
+    const counts={};
+    csvData.forEach(r=>{
+      const raw=(r[dim.column]||'').trim();
+      if(!raw)return;
+      const label=dimValueLabel(dim,raw);
+      counts[label]=(counts[label]||0)+1;
+    });
+    const vals=orderedSegVals(dim,counts);
+    const wrap=document.createElement('div');
+    wrap.className='adv-filter-item';
+    const lbl=document.createElement('label');
+    lbl.textContent=dim.label;
+    const sel=document.createElement('select');
+    sel.innerHTML='<option value="">הכל</option>'+vals.map(v=>`<option value="${esc(v)}">${esc(v)} (${fmtNum(counts[v])})</option>`).join('');
+    sel.value=advancedFilters[dim.key]||'';
+    sel.onchange=()=>{advancedFilters[dim.key]=sel.value||null;onAdvancedFilterChange();};
+    wrap.appendChild(lbl);wrap.appendChild(sel);
+    row.appendChild(wrap);
+  });
+  updateAdvFilterSummary();
+}
+
+function clearAdvancedFilters(){
+  advancedFilters={};
+  document.querySelectorAll('#advFilterRow select').forEach(s=>{s.value='';});
+  onAdvancedFilterChange();
+}
+
+function onAdvancedFilterChange(){
+  renderDashboardContent();
+  updateAdvFilterSummary();
+}
+
+function updateAdvFilterSummary(){
+  const el=document.getElementById('advFilterSummary');
+  if(!el)return;
+  const active=Object.values(advancedFilters).some(Boolean);
+  if(!active){el.textContent='';return;}
+  el.textContent=`מציג ${fmtNum(getFilteredData().length)} מתוך ${fmtNum(csvData.length)} משיבים התואמים לסינון שנבחר`;
+}
+
+function getFilteredData(){
+  const active=Object.entries(advancedFilters).filter(([,v])=>v);
+  if(!active.length)return csvData;
+  const dims=findBreakdownColumns();
+  return csvData.filter(r=>active.every(([key,label])=>{
+    const dim=dims.find(d=>d.key===key);
+    if(!dim)return true;
+    const raw=(r[dim.column]||'').trim();
+    return raw!==''&&dimValueLabel(dim,raw)===label;
+  }));
+}
+
 function renderDashboardContent(){
   const container=document.getElementById('dashboardContent');
   container.innerHTML='';
+  const data=getFilteredData();
   const mainCols=computeMainQuestionColumns();
   let shown=0;
   mainCols.forEach(h=>{
-    const card=renderMainQuestionCard(h);
+    const card=renderMainQuestionCard(h,data);
     if(card){card.style.marginBottom='18px';container.appendChild(card);shown++;}
   });
   document.getElementById('emptyHint').classList.toggle('hidden',shown>0);
@@ -604,17 +709,20 @@ function makeChip(label,active,onClick){
    dimension found in this file) right under the title. Picking a chip
    re-renders the whole dashboard with that breakdown applied to this
    question's chart; picking "ללא פילוח" goes back to the overall view. */
-function renderMainQuestionCard(h){
+function renderMainQuestionCard(h,data){
   const t=colType[h];
-  const breakdownCols=(t==='categorical'||t==='likert')?findBreakdownColumns():[];
+  // A dimension already pinned to one value by the advanced filter has
+  // nothing left to compare — its own breakdown chip would just draw a
+  // single-segment chart, so it's dropped from the per-question row.
+  const breakdownCols=(t==='categorical'||t==='likert')?findBreakdownColumns().filter(d=>!advancedFilters[d.key]):[];
   const selectedKey=mainBreakdown[h]||null;
   const selectedDim=breakdownCols.find(d=>d.key===selectedKey)||null;
 
   let card=null;
-  if(t==='categorical')card=renderCategoricalCard(h,csvData,selectedDim);
-  else if(t==='likert')card=renderLikertCard(h,csvData,selectedDim);
-  else if(t==='numeric')card=renderNumericCard(h,csvData);
-  else if(t==='freetext')card=renderFreeTextCard(h,csvData);
+  if(t==='categorical')card=renderCategoricalCard(h,data,selectedDim);
+  else if(t==='likert')card=renderLikertCard(h,data,selectedDim);
+  else if(t==='numeric')card=renderNumericCard(h,data);
+  else if(t==='freetext')card=renderFreeTextCard(h,data);
   if(!card)return null;
 
   if(breakdownCols.length){
@@ -655,7 +763,7 @@ function renderCategoricalCard(h,data,breakdownDim){
 
   if(breakdownDim){
     const segCol=breakdownDim.column;
-    const shortLabel=sv=>breakdownDim.key==='mahoz'?shortenMahozLabel(sv):sv;
+    const shortLabel=sv=>dimValueLabel(breakdownDim,sv);
     const segCounts=valueCounts(data,segCol);
     const segVals=orderedSegVals(breakdownDim,segCounts);
     const datasets=segVals.map((sv,i)=>{
@@ -714,7 +822,7 @@ function renderLikertCard(h,data,breakdownDim){
 
   if(breakdownDim){
     const segCol=breakdownDim.column;
-    const shortLabel=sv=>breakdownDim.key==='mahoz'?shortenMahozLabel(sv):sv;
+    const shortLabel=sv=>dimValueLabel(breakdownDim,sv);
     const segCounts=valueCounts(data,segCol);
     const segVals=orderedSegVals(breakdownDim,segCounts);
     const datasets=segVals.map((sv,i)=>{
