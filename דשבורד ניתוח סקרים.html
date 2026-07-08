@@ -6,19 +6,14 @@
 <title>דשבורד ניתוח סקרים</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-/* Mashav brand typeface — copied locally from the mashav-infographics
-   project's font kit (../mashav-infographics/public/fonts) so this file
-   stays self-contained and portable instead of depending on a file:// path
-   outside its own folder. */
-@font-face{font-family:'SimplerPro';src:url('fonts/SimplerPro-Regular.otf') format('opentype');font-weight:400;font-style:normal;font-display:swap}
-@font-face{font-family:'SimplerPro';src:url('fonts/SimplerPro-Semibold.otf') format('opentype');font-weight:600;font-style:normal;font-display:swap}
-@font-face{font-family:'SimplerPro';src:url('fonts/SimplerPro-Bold.otf') format('opentype');font-weight:700;font-style:normal;font-display:swap}
-@font-face{font-family:'SimplerPro';src:url('fonts/SimplerPro-Black.otf') format('opentype');font-weight:900;font-style:normal;font-display:swap}
 :root{--navy:#1a3a5c;--gold:#c8a84b;--green:#27ae60;--orange:#e67e22;--red:#e74c3c;--purple:#8e44ad;--bg:#f0f4f9;--card:#fff;--text:#2c3e50;--border:#dde3ea;--shadow:0 2px 14px rgba(0,0,0,.07);
   --brand-navy:#1b2a5b;--brand-orange:#e2622c;--brand-teal:#2fb6bd}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'SimplerPro','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);direction:rtl}
+body{font-family:'Heebo','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);direction:rtl}
 header{background:linear-gradient(135deg,#1a3a5c,#0f2540);color:#fff;padding:18px 36px;display:flex;align-items:center;gap:16px;box-shadow:0 3px 12px rgba(0,0,0,.25)}
 .logo{width:52px;height:52px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.3)}
 header h1{font-size:1.55rem;font-weight:700;letter-spacing:-.3px}
@@ -55,7 +50,7 @@ select.type-sel{width:100%;padding:6px 8px;border:1.5px solid var(--border);bord
 .chip:hover{background:#dde7f5}
 .chip.active{background:var(--navy);color:#fff}
 .q-card{background:var(--card);border-radius:12px;padding:32px 28px;box-shadow:var(--shadow);border:1px solid var(--border)}
-.q-card h3{font-family:'SimplerPro',sans-serif;font-weight:900;color:var(--brand-navy);font-size:18px;line-height:1.35;text-align:center;margin-bottom:8px}
+.q-card h3{font-family:'Heebo',sans-serif;font-weight:900;color:var(--brand-navy);font-size:18px;line-height:1.35;text-align:center;margin-bottom:8px}
 .q-meta{font-size:1rem;color:#888;margin-bottom:16px;text-align:center}
 .chart-wrap{position:relative;height:400px;margin-bottom:14px}
 .chart-wrap.pie-chart{width:320px;height:320px;margin:0 auto 14px}
@@ -481,7 +476,7 @@ function centerLabelsPlugin(){
     const percents=wholePercentsSumming100(data);
     ctx.save();
     ctx.fillStyle='#fff';
-    ctx.font="900 22px 'SimplerPro',sans-serif";
+    ctx.font="900 22px 'Heebo',sans-serif";
     ctx.textAlign='center';
     ctx.textBaseline='middle';
     ctx.direction='ltr';
