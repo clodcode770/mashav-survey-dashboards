@@ -297,6 +297,19 @@ function sanitizeArtifacts(){
   });
 }
 
+/* A raw "Age" column with individual ages (18,19,20...) has far more than
+   the 12-distinct-value cap findBreakdownColumns() allows, so it would never
+   surface as a "פילוח לפי גיל" chip. Bucketing it into standard age-group
+   ranges keeps it usable as a breakdown dimension without touching files
+   that already export pre-binned age groups (those stay under the cap and
+   are used as-is). */
+const AGE_BUCKET_COL='___ageBucket';
+const AGE_BUCKET_RANGES=[[0,24,'עד 24'],[25,34,'25–34'],[35,44,'35–44'],[45,54,'45–54'],[55,64,'55–64'],[65,999,'65+']];
+function ageBucketLabel(n){
+  const b=AGE_BUCKET_RANGES.find(([lo,hi])=>n>=lo&&n<=hi);
+  return b?b[2]:String(n);
+}
+
 function buildColMeta(){
   colMeta={};colType={};
   csvHeaders.forEach(h=>{
@@ -330,6 +343,19 @@ function buildColMeta(){
     colMeta[h]={filled,total,pct:total>0?Math.round(filled/total*100):0,unique:uniqArr.length,sample,auto,values:raw};
     colType[h]=auto;
   });
+
+  const ageCol=csvHeaders.find(h=>/^age\b/i.test(h.trim()));
+  if(ageCol&&colMeta[ageCol]&&colMeta[ageCol].unique>12){
+    const rawAge=csvData.map(r=>(r[ageCol]||'').trim());
+    const allNumeric=rawAge.filter(v=>v!=='').every(v=>/^-?\d+(\.\d+)?$/.test(v));
+    if(allNumeric){
+      csvData.forEach((r,i)=>{r[AGE_BUCKET_COL]=rawAge[i]===''?'':ageBucketLabel(Number(rawAge[i]));});
+      const bucketVals=csvData.map(r=>r[AGE_BUCKET_COL]||'');
+      const bucketNonEmpty=bucketVals.filter(v=>v!=='');
+      colMeta[AGE_BUCKET_COL]={filled:bucketNonEmpty.length,total:bucketVals.length,pct:colMeta[ageCol].pct,unique:new Set(bucketNonEmpty).size,sample:'',auto:'categorical',values:bucketVals};
+      colType[AGE_BUCKET_COL]='categorical';
+    }
+  }
 }
 
 /* The substantive question(s) being measured are named "W1", "W2"... in this
@@ -355,7 +381,8 @@ const BREAKDOWN_DIMENSIONS=[
 ];
 function findBreakdownColumns(){
   return BREAKDOWN_DIMENSIONS.map(dim=>{
-    const col=csvHeaders.find(h=>dim.rx.test(h.trim()));
+    let col=csvHeaders.find(h=>dim.rx.test(h.trim()));
+    if(dim.key==='age'&&colMeta[AGE_BUCKET_COL])col=AGE_BUCKET_COL;
     if(!col)return null;
     const m=colMeta[col];
     if(!m||m.unique<2||m.unique>12)return null;
@@ -543,6 +570,17 @@ function shortenMahozLabel(v){
   return m[0].trim()||v;
 }
 
+/* Other breakdown dimensions (gender, religiosity...) read fine ordered by
+   count, but age groups read as noise unless kept chronological — youngest
+   to oldest — regardless of which bucket happens to be largest. */
+function orderedSegVals(breakdownDim,segCounts){
+  if(breakdownDim.key==='age'){
+    const order=AGE_BUCKET_RANGES.map(b=>b[2]);
+    return Object.keys(segCounts).sort((a,b)=>order.indexOf(a)-order.indexOf(b));
+  }
+  return Object.keys(segCounts).sort((a,b)=>segCounts[b]-segCounts[a]);
+}
+
 function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
 function valueCounts(data,col){
@@ -683,7 +721,7 @@ function renderCategoricalCard(h,data,breakdownDim){
     const segCol=breakdownDim.column;
     const shortLabel=sv=>breakdownDim.key==='mahoz'?shortenMahozLabel(sv):sv;
     const segCounts=valueCounts(data,segCol);
-    const segVals=Object.keys(segCounts).sort((a,b)=>segCounts[b]-segCounts[a]);
+    const segVals=orderedSegVals(breakdownDim,segCounts);
     const datasets=segVals.map((sv,i)=>{
       const subset=data.filter(r=>(r[segCol]||'').trim()===sv);
       const subTotal=subset.length;
@@ -742,7 +780,7 @@ function renderLikertCard(h,data,breakdownDim){
     const segCol=breakdownDim.column;
     const shortLabel=sv=>breakdownDim.key==='mahoz'?shortenMahozLabel(sv):sv;
     const segCounts=valueCounts(data,segCol);
-    const segVals=Object.keys(segCounts).sort((a,b)=>segCounts[b]-segCounts[a]);
+    const segVals=orderedSegVals(breakdownDim,segCounts);
     const datasets=segVals.map((sv,i)=>{
       const subset=data.filter(r=>(r[segCol]||'').trim()===sv);
       const subRaw=subset.map(r=>(r[h]||'').trim()).filter(v=>/^-?\d+(\.\d+)?$/.test(v)).map(Number);
