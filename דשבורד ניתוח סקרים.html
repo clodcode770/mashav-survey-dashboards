@@ -56,7 +56,7 @@ tr:hover td{background:#fafbff}
 .adv-filter-item select{padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;direction:rtl;background:#fff}
 .adv-filter-summary{font-size:.85rem;color:#555;margin-top:14px}
 .q-card{background:var(--card);border-radius:12px;padding:32px 28px;box-shadow:var(--shadow);border:1px solid var(--border)}
-.q-card h3{font-family:'Heebo',sans-serif;font-weight:900;color:var(--brand-navy);font-size:18px;line-height:1.35;text-align:center;margin-bottom:8px}
+.q-card h3{font-family:'Heebo',sans-serif;font-weight:900;color:var(--brand-navy);font-size:18px;line-height:1.35;text-align:center;max-width:560px;margin:0 auto 8px;overflow-wrap:break-word}
 .q-meta{font-size:1rem;color:#888;margin-bottom:16px;text-align:center}
 .chart-wrap{position:relative;height:400px;margin-bottom:14px}
 .chart-wrap.pie-chart{width:320px;height:320px;margin:0 auto 14px}
@@ -525,6 +525,31 @@ function centerLabelsPlugin(){
   }};
 }
 
+/* Draws each breakdown bar's percentage value centered above the bar, so the
+   reader doesn't need to hover to see it (tooltip is disabled on these
+   charts — the number is always visible instead). */
+function barPercentLabelsPlugin(){
+  return{id:'barPercentLabels',afterDatasetsDraw(chart){
+    const ctx=chart.ctx;
+    ctx.save();
+    ctx.fillStyle='#2c3e50';
+    ctx.font="800 12px 'Heebo',sans-serif";
+    ctx.textAlign='center';
+    ctx.textBaseline='bottom';
+    chart.data.datasets.forEach((ds,dsIndex)=>{
+      const meta=chart.getDatasetMeta(dsIndex);
+      if(meta.hidden)return;
+      meta.data.forEach((bar,i)=>{
+        const val=ds.data[i];
+        if(val==null)return;
+        const{x,y}=bar.getProps(['x','y'],true);
+        ctx.fillText(val+'%',x,y-4);
+      });
+    });
+    ctx.restore();
+  }};
+}
+
 /* The main question's column header carries a "W1.", "W2."... prefix (this
    survey tool's internal question-number tag) that's meaningful for
    detecting the main question but shouldn't be shown to a reader. */
@@ -762,12 +787,6 @@ function renderCategoricalCard(h,data,breakdownDim){
   const wrap=document.createElement('div');wrap.className='chart-wrap'+(usePie?' pie-chart':'');wrap.appendChild(canvas);
   card.appendChild(wrap);
 
-  if(usePie){
-    const titleEl=card.querySelector('h3');
-    titleEl.style.maxWidth='320px';
-    titleEl.style.margin='0 auto 8px';
-  }
-
   if(breakdownDim){
     const segCol=breakdownDim.column;
     const shortLabel=sv=>dimValueLabel(breakdownDim,sv);
@@ -782,7 +801,8 @@ function renderCategoricalCard(h,data,breakdownDim){
     setTimeout(()=>{
       destroyChart(canvasId);
       charts[canvasId]=new Chart(canvas.getContext('2d'),{type:'bar',data:{labels,datasets},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',rtl:true,labels:{font:{size:15},padding:16}},tooltip:{rtl:true,bodyFont:{size:14},titleFont:{size:15},callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y}%`}}},
+        plugins:[barPercentLabelsPlugin()],
+        options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18}},plugins:{legend:{position:'top',rtl:true,labels:{font:{size:15},padding:16}},tooltip:{enabled:false}},
           scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%',font:{size:14}}},x:{ticks:{font:{size:13}}}}}});
     },0);
   }else{
@@ -841,7 +861,8 @@ function renderLikertCard(h,data,breakdownDim){
     setTimeout(()=>{
       destroyChart(canvasId);
       charts[canvasId]=new Chart(canvas.getContext('2d'),{type:'bar',data:{labels,datasets},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',rtl:true,labels:{font:{size:15},padding:16}},tooltip:{rtl:true,bodyFont:{size:14},titleFont:{size:15},callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y}%`}}},
+        plugins:[barPercentLabelsPlugin()],
+        options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18}},plugins:{legend:{position:'top',rtl:true,labels:{font:{size:15},padding:16}},tooltip:{enabled:false}},
           scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%',font:{size:14}}}}}});
     },0);
   }else{
