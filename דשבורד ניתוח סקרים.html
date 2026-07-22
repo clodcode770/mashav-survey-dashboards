@@ -632,7 +632,20 @@ function findLikelyGate(idxSet,beforeHeaderIdx,data){
   return best;
 }
 
+/* Active values chosen in the advanced (combined) filter bar — shown as a
+   short suffix on the question title (e.g. "(נשים · חילונים)") so the reader
+   knows which segment they're looking at. */
+function activeFilterSuffix(){
+  const vals=Object.values(advancedFilters).filter(Boolean);
+  return vals.length?` (${vals.join(' · ')})`:'';
+}
+
 function gateNoteHtml(h,idxSet,data){
+  // With an advanced filter active, the answered-set is already narrowed to
+  // that segment, so the gate heuristic below just rediscovers the filter
+  // itself and reports it as if it were real skip-logic — misleading, so
+  // skip it and rely on activeFilterSuffix() in the title instead.
+  if(Object.values(advancedFilters).some(Boolean))return '';
   const gate=findLikelyGate(idxSet,csvHeaders.indexOf(h),data);
   if(!gate)return '';
   return ` · <span title="זוהה אוטומטית: כ-${gate.coveragePct}% ממי שענה כך גם ענה על שאלה זו">ⓘ נראה שנשאל רק למי שענה <strong>"${esc(gate.val)}"</strong> ב"${esc(gate.col.length>30?gate.col.slice(0,28)+'…':gate.col)}"</span>`;
@@ -780,7 +793,7 @@ function renderCategoricalCard(h,data,breakdownDim){
   const counts=valueCounts(data,h);
   const total=Object.values(counts).reduce((s,v)=>s+v,0);
   if(total===0)return null;
-  const card=makeCardShell(stripMainQuestionPrefix(h),`${answeredPctPrefix(total,data.length).replace(/ · $/,'')}${gateNoteHtml(h,answeredIdxSet([h],data),data)}`);
+  const card=makeCardShell(stripMainQuestionPrefix(h)+activeFilterSuffix(),`${answeredPctPrefix(total,data.length).replace(/ · $/,'')}${gateNoteHtml(h,answeredIdxSet([h],data),data)}`);
   const canvasId='chart_'+Math.random().toString(36).slice(2,10);
   const canvas=document.createElement('canvas');
   canvas.id=canvasId;
@@ -842,7 +855,7 @@ function renderLikertCard(h,data,breakdownDim){
   const avg=(raw.reduce((s,v)=>s+v,0)/raw.length);
   const sorted=[...raw].sort((a,b)=>a-b);
   const median=sorted[Math.floor(sorted.length/2)];
-  const card=makeCardShell(stripMainQuestionPrefix(h),`${answeredPctPrefix(raw.length,data.length)}ממוצע <strong style="color:var(--navy)">${avg.toFixed(2)}</strong> · חציון ${median}${gateNoteHtml(h,answeredIdxSet([h],data),data)}`);
+  const card=makeCardShell(stripMainQuestionPrefix(h)+activeFilterSuffix(),`${answeredPctPrefix(raw.length,data.length)}ממוצע <strong style="color:var(--navy)">${avg.toFixed(2)}</strong> · חציון ${median}${gateNoteHtml(h,answeredIdxSet([h],data),data)}`);
   const canvasId='chart_'+Math.random().toString(36).slice(2,10);
   const wrap=document.createElement('div');wrap.className='chart-wrap';
   const canvas=document.createElement('canvas');canvas.id=canvasId;wrap.appendChild(canvas);card.appendChild(wrap);
@@ -893,7 +906,7 @@ function renderNumericCard(h,data){
   const raw=data.map(r=>(r[h]||'').trim()).filter(v=>/^-?\d+(\.\d+)?$/.test(v)).map(Number);
   if(!raw.length)return null;
   const avg=raw.reduce((s,v)=>s+v,0)/raw.length;
-  const card=makeCardShell(stripMainQuestionPrefix(h),`${answeredPctPrefix(raw.length,data.length)}ממוצע <strong style="color:var(--navy)">${avg.toFixed(1)}</strong> · טווח ${Math.min(...raw)}–${Math.max(...raw)}`);
+  const card=makeCardShell(stripMainQuestionPrefix(h)+activeFilterSuffix(),`${answeredPctPrefix(raw.length,data.length)}ממוצע <strong style="color:var(--navy)">${avg.toFixed(1)}</strong> · טווח ${Math.min(...raw)}–${Math.max(...raw)}`);
   const canvasId='chart_'+Math.random().toString(36).slice(2,10);
   const wrap=document.createElement('div');wrap.className='chart-wrap';
   const canvas=document.createElement('canvas');canvas.id=canvasId;wrap.appendChild(canvas);card.appendChild(wrap);
@@ -914,7 +927,7 @@ function renderNumericCard(h,data){
 function renderFreeTextCard(h,data){
   const values=data.map(r=>(r[h]||'').trim()).filter(Boolean);
   if(!values.length)return null;
-  const card=makeCardShell(stripMainQuestionPrefix(h),`${answeredPctPrefix(values.length,data.length).replace(/ · $/,'')}${gateNoteHtml(h,answeredIdxSet([h],data),data)}`);
+  const card=makeCardShell(stripMainQuestionPrefix(h)+activeFilterSuffix(),`${answeredPctPrefix(values.length,data.length).replace(/ · $/,'')}${gateNoteHtml(h,answeredIdxSet([h],data),data)}`);
   const btn=document.createElement('button');
   btn.className='btn btn-ghost btn-sm';
   btn.style.marginTop='12px';
