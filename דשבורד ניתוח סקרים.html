@@ -566,7 +566,12 @@ function shortenMahozLabel(v){
 /* Display/grouping label for a raw breakdown-dimension value — shared by the
    per-question breakdown charts and the advanced (combined) filter bar so
    both group Mahoz's long geographic strings the same way. */
-function dimValueLabel(dim,raw){return dim.key==='mahoz'?shortenMahozLabel(raw):raw;}
+const GENDER_LABELS={'אישה':'נשים','גבר':'גברים'};
+function dimValueLabel(dim,raw){
+  if(dim.key==='mahoz')return shortenMahozLabel(raw);
+  if(dim.key==='gender')return GENDER_LABELS[raw]||raw;
+  return raw;
+}
 
 /* Other breakdown dimensions (gender, religiosity...) read fine ordered by
    count, but age groups read as noise unless kept chronological — youngest
