@@ -762,6 +762,12 @@ function renderCategoricalCard(h,data,breakdownDim){
   const wrap=document.createElement('div');wrap.className='chart-wrap'+(usePie?' pie-chart':'');wrap.appendChild(canvas);
   card.appendChild(wrap);
 
+  if(usePie){
+    const titleEl=card.querySelector('h3');
+    titleEl.style.maxWidth='320px';
+    titleEl.style.margin='0 auto 8px';
+  }
+
   if(breakdownDim){
     const segCol=breakdownDim.column;
     const shortLabel=sv=>dimValueLabel(breakdownDim,sv);
